@@ -21,7 +21,6 @@ import jakarta.persistence.Id;
 public class Movie {
 
     @Id
-    @GeneratedValue
     private Long id;
 
     private String title;
@@ -31,14 +30,12 @@ public class Movie {
     @ManyToMany
     private Set<Genre> genres;
 
-    public static Movie toEntity(Long id, Long tId, StringBuilder title, String[] genre, GenreService genreService) {
+    public static Movie toEntity(Long id, Long tId, String title, Set<Genre> genres) {
         return Movie.builder()
                 .id(id)
                 .tId(tId)
-                .title(title.toString())
-                .genres(Arrays.stream(genre)
-                        .map(genreService::findOrCreateNew)
-                        .collect(Collectors.toSet()))
+                .title(title)
+                .genres(genres)
                 .build();
     }
 
