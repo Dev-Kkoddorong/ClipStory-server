@@ -8,7 +8,6 @@ import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.TagRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import com.clipstory.clipstoryserver.responseDto.TagResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,6 +38,10 @@ public class TagService {
         return tags.stream()
                 .map(tag -> TagResponseDto.toResponseDto(tag))
                 .toList();
+    }
+
+    public List<Tag> getTagsByMovieId(Long movieId) {
+        return tagRepository.findAllByMovieId(movieId);
     }
 
 }
