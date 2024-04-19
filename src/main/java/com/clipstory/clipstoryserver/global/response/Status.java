@@ -19,6 +19,11 @@ public enum Status {
     CONFLICT(HttpStatus.CONFLICT, "COMMON409", "이미 생성되었습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON500", "서버에 오류가 발생했습니다."),
 
+    //Movie 오류 응답
+    MOVIE_NOT_FOUND(HttpStatus.NOT_FOUND, "MOVIE404", "존재하지 않는 영화입니다."),
+
+    //Member 오류 응답
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER404", "존재하지 않는 회원입니다."),
     ;
 
     private final HttpStatus httpStatus;
