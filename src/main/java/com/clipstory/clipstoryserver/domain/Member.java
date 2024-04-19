@@ -26,8 +26,19 @@ public class Member {
 
     private String name;
 
-    @OneToMany
+    @OneToMany(mappedBy = "member")
     private List<Tag> tagList;
+
+    @OneToMany(mappedBy = "member")
+    private List<Rating> ratingList;
+
+    public void addTag(Tag tag) {
+        this.tagList.add(tag);
+    }
+
+    public void addRating(Rating rating) {
+        this.ratingList.add(rating);
+    }
 
     public static Member toEntity(String customId, String name) {
         return Member.builder()

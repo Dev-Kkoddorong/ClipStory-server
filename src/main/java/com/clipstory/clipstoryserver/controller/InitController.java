@@ -37,4 +37,12 @@ public class InitController {
                 Status.CREATED.getMessage(), null);
     }
 
+    @GetMapping("/ratings")
+    @Operation(summary = "DB에 평점 데이터 적재")
+    public ApiResponse<?> addRatings() throws IOException {
+        initService.addRatings();
+        return ApiResponse.onSuccess(Status.OK.getCode(),
+                Status.CREATED.getMessage(), null);
+    }
+
 }
