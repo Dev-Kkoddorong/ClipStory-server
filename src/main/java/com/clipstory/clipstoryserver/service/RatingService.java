@@ -19,4 +19,8 @@ public class RatingService {
         ratingRepository.save(rating);
     }
 
+    public Double getAverageRating(Long movieId) {
+        return ratingRepository.findAverageRatingByMovieId(movieId);
+    }
+
 }
