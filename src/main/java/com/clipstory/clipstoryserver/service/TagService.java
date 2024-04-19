@@ -6,10 +6,13 @@ import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.TagRepository;
+import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.clipstory.clipstoryserver.responseDto.TagResponseDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -33,11 +36,9 @@ public class TagService {
                 .orElseThrow(() -> new GeneralException(Status.TAG_NOT_FOUND));
     }
 
-    public List<TagResponseDto> getAllTag() {
-        List<Tag> tags = tagRepository.findAll();
-        return tags.stream()
-                .map(tag -> TagResponseDto.toResponseDto(tag))
-                .toList();
+    public PagedResponseDto<TagResponseDto> getAllTag(Pageable pageable) {
+        Page<Tag> tags = tagRepository.findAll(pageable);
+        return new PagedResponseDto<>(tags.map(tag -> TagResponseDto.toResponseDto(tag)));
     }
 
     public List<Tag> getTagsByMovieId(Long movieId) {
