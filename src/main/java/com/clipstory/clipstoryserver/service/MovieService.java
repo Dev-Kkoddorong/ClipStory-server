@@ -23,6 +23,8 @@ public class MovieService {
 
     private final RatingService ratingService;
 
+    private final TagService tagService;
+
     public void createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
         Movie movie = Movie.toEntity(movieId, tId, title, genres);
         movieRepository.save(movie);
@@ -31,12 +33,15 @@ public class MovieService {
     public PagedResponseDto<MovieResponseDto> getMovies(Pageable pageable) {
         Page<Movie> movies = movieRepository.findAll(pageable);
         return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(movie, ratingService.getAverageRating(movie.getId()))));
+                map(movie ->  MovieResponseDto.toMovieResponseDto(
+                        movie, ratingService.getAverageRating(movie.getId()),
+                        tagService.getTagsByMovieId(movie.getId()))));
     }
 
     public MovieResponseDto getMovie(Long movieId) {
         Movie movie = findMovieById(movieId);
-        return MovieResponseDto.toMovieResponseDto(movie, ratingService.getAverageRating(movieId));
+        return MovieResponseDto.toMovieResponseDto(movie,
+                ratingService.getAverageRating(movieId), tagService.getTagsByMovieId(movie.getId()));
     }
 
 
