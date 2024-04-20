@@ -24,6 +24,9 @@ public enum Status {
 
     //Member 오류 응답
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER404", "존재하지 않는 회원입니다."),
+
+    //TAG 오류 응답
+    TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "TAG404", "존재하지 않는 태그입니다."),
     ;
 
     private final HttpStatus httpStatus;

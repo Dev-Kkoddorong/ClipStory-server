@@ -1,5 +1,6 @@
 package com.clipstory.clipstoryserver.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
@@ -27,9 +28,11 @@ public class Rating {
     private Long id;
 
     @ManyToOne
+    @JsonBackReference
     private Member member;
 
     @ManyToOne
+    @JsonBackReference
     private Movie movie;
 
     private Double score;
