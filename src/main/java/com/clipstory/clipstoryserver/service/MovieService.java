@@ -44,6 +44,14 @@ public class MovieService {
                 ratingService.getAverageRating(movieId), tagService.getTagsByMovieId(movie.getId()));
     }
 
+    public PagedResponseDto<MovieResponseDto> getMovieByPartOfTitle(String partOfTitle, Pageable pageable) {
+        Page<Movie> movies = movieRepository.findByTitleContainingKeyword(partOfTitle, pageable);
+        return new PagedResponseDto<>(movies.
+                map(movie ->  MovieResponseDto.toMovieResponseDto(
+                        movie, ratingService.getAverageRating(movie.getId()),
+                        tagService.getTagsByMovieId(movie.getId()))));
+    }
+
 
     public Movie findMovieById(Long id) {
         return movieRepository.findById(id)

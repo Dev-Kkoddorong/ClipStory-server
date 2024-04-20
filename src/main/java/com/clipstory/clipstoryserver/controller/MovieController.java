@@ -36,7 +36,7 @@ public class MovieController {
         Pageable pageable = PageRequest.of(page, size);
         PagedResponseDto<MovieResponseDto> pagedMovieList = movieService.getMovies(pageable);
         return ApiResponse.onSuccess(Status.OK.getCode(),
-                Status.CREATED.getMessage(), pagedMovieList);
+                Status.OK.getMessage(), pagedMovieList);
     }
 
     @GetMapping("/{movieId}")
@@ -46,7 +46,20 @@ public class MovieController {
     ) throws IOException {
         MovieResponseDto movieList = movieService.getMovie(movieId);
         return ApiResponse.onSuccess(Status.OK.getCode(),
-                Status.CREATED.getMessage(), movieList);
+                Status.OK.getMessage(), movieList);
+    }
+
+    @GetMapping("/title")
+    @Operation(summary = "제목 일부분으로 영화 조회")
+    public ApiResponse<?> getMovieByPartOfTitle(
+            @RequestParam(name = "partOfTitle") String partOfTitle,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        PagedResponseDto<MovieResponseDto> pagedMovieList = movieService.getMovieByPartOfTitle(partOfTitle, pageable);
+        return ApiResponse.onSuccess(Status.OK.getCode(),
+                Status.OK.getMessage(), pagedMovieList);
     }
 
 }
