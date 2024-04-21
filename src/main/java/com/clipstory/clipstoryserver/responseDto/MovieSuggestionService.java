@@ -29,6 +29,8 @@ public class MovieSuggestionService {
 
     private static final int HATE_MOVIE_SIZE = 3;
 
+    private static final int SUGGESTION_MOVIE_SIZE = 3;
+
     private static final Double SIMILARITY_TO_PASS = 0.90;
 
     public static final Double GENRE_WEIGHT = 3.0;
@@ -44,19 +46,19 @@ public class MovieSuggestionService {
                 .toList();
 
         Set<Movie> similarMovies = getSimilarMovies(likeMovies);
-        //similarMovies.removeAll(getSimilarMovies(hateMovies));
-        return similarMovies
-                .stream()
+        similarMovies.removeAll(getSimilarMovies(hateMovies));
+
+        return similarMovies.stream()
                 .map(movie -> MovieResponseDto.toMovieResponseDto(
                         movie, ratingService.getAverageRating(movie.getId()), tagService.getTagsByMovieId(movie.getId())
-                        )
+                    )
                 )
                 .sorted(Comparator.comparingDouble(
-                        (MovieResponseDto movieResponseDto) -> movieResponseDto.getAverageRating() == null ? 0 : movieResponseDto.getAverageRating()
+                            (MovieResponseDto movieResponseDto) -> movieResponseDto.getAverageRating() == null ? 0 : movieResponseDto.getAverageRating()
                         )
-                        .reversed()
+                    .reversed()
                 )
-                .toList();
+                .toList().subList(0, SUGGESTION_MOVIE_SIZE);
     }
 
     public Set<Movie> getSimilarMovies(List<Movie> movies) {
