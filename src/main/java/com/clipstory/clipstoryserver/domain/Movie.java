@@ -4,7 +4,11 @@ import com.clipstory.clipstoryserver.service.GenreService;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.ManyToMany;
+
+import java.sql.Wrapper;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
