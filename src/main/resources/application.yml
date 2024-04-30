@@ -1,0 +1,23 @@
+server:
+  port: 9292
+
+spring:
+  mvc:
+    path match:
+      matching-strategy: ant_path_matcher
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER_NAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        show_sql: false
+        format_sql: false
+        use_sql_comments: false
+        hbm2ddl:
+          auto: update
+        default_batch_fetch_size: 1000
