@@ -10,10 +10,7 @@ import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
 import com.clipstory.clipstoryserver.responseDto.MovieSuggestionService;
 import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import io.swagger.models.auth.In;
@@ -33,6 +30,10 @@ public class MovieService {
     private final RatingService ratingService;
 
     private final TagService tagService;
+
+    private final HashMap<Long, HashMap<String, Double>> movieVectors = new HashMap<>();
+
+    private final HashMap<Long, Double> movieVectorsMagnitude = new HashMap<>();
 
     public void createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
         Movie movie = Movie.toEntity(movieId, tId, title, genres);
@@ -72,6 +73,10 @@ public class MovieService {
     }
 
     public Double magnitude(Movie movie) {
+        if (movieVectorsMagnitude.get(movie.getId()) != null) {
+            return movieVectorsMagnitude.get(movie.getId());
+        }
+
         Double magnitude = 0.0;
         HashMap<String, Double> movieVector = getMovieVector(movie);
         for (Double count : movieVector.values()) {
@@ -79,6 +84,7 @@ public class MovieService {
         }
 
         magnitude = Math.sqrt(magnitude);
+        movieVectorsMagnitude.put(movie.getId(), magnitude);
         return magnitude;
     }
 
@@ -103,6 +109,10 @@ public class MovieService {
     }
 
     public HashMap<String, Double> getMovieVector(Movie movie) {
+        if (movieVectors.get(movie.getId()) != null) {
+            return movieVectors.get(movie.getId());
+        }
+
         HashMap<String, Double> movieVector = new HashMap<>();
         for (Genre genre : movie.getGenres()) {
             movieVector.merge(genre.getName(), MovieSuggestionService.GENRE_WEIGHT, Double::sum);
@@ -110,6 +120,7 @@ public class MovieService {
         for (Tag tag : tagService.getTagsByMovieId(movie.getId())) {
             movieVector.merge(tag.getContent(), 1.0, Double::sum);
         }
+        movieVectors.put(movie.getId(), movieVector);
         return movieVector;
     }
 }

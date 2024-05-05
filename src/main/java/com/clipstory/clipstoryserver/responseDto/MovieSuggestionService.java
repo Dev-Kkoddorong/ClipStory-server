@@ -55,8 +55,7 @@ public class MovieSuggestionService {
                 )
                 .sorted(Comparator.comparingDouble(
                             (MovieResponseDto movieResponseDto) -> movieResponseDto.getAverageRating() == null ? 0 : movieResponseDto.getAverageRating()
-                        )
-                    .reversed()
+                        ).reversed()
                 )
                 .toList().subList(0, SUGGESTION_MOVIE_SIZE);
     }
