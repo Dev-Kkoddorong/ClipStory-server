@@ -49,4 +49,9 @@ public class AuthService {
         memberService.save(member);
     }
 
+    public Member getCurrentMember() {
+        String memberCustomId = jwtProvider.getUsernameFromAuthentication();
+        return memberService.findMemberByCustomId(memberCustomId);
+    }
+
 }
