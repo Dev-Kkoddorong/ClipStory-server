@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Builder
 @Getter
@@ -60,12 +61,12 @@ public class Member implements UserDetails {
         this.role = role;
     }
 
-    public static Member toEntity(String customId, String name, String password) {
+    public static Member toEntity(String customId, String name, String password, PasswordEncoder passwordEncoder) {
         return Member.builder()
                 .customId(customId)
                 .name(name)
                 .role(Role.USER)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .build();
     }
 

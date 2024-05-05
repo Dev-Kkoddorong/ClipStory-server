@@ -5,6 +5,7 @@ import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+
+    private final PasswordEncoder passwordEncoder;
 
     public Member findOrCreateMember(String customId) {
         Member member = null;
@@ -25,7 +28,7 @@ public class MemberService {
     }
 
     public void createMember(String customId, String name, String password) {
-        Member member = Member.toEntity(customId, name, password);
+        Member member = Member.toEntity(customId, name, password, passwordEncoder);
         memberRepository.save(member);
     }
 
