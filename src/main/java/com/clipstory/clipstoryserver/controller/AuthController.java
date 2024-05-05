@@ -3,6 +3,7 @@ package com.clipstory.clipstoryserver.controller;
 import com.clipstory.clipstoryserver.global.response.ApiResponse;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.requestDto.LoginRequestDto;
+import com.clipstory.clipstoryserver.requestDto.MemberRequestDto;
 import com.clipstory.clipstoryserver.responseDto.GenreResponseDto;
 import com.clipstory.clipstoryserver.responseDto.JwtResponseDto;
 import com.clipstory.clipstoryserver.service.AuthService;
@@ -34,6 +35,15 @@ public class AuthController {
         JwtResponseDto jwtResponseDTO = authService.login(loginRequestDto);
         return ApiResponse.onSuccess(Status.OK.getCode(),
                 Status.CREATED.getMessage(), jwtResponseDTO);
+    }
+
+    @PostMapping("/signUp")
+    @Operation(summary = "회원가입")
+    public ApiResponse<?> signUp(
+            @RequestBody @Valid MemberRequestDto memberRequestDto) {
+        authService.signUp(memberRequestDto);
+        return ApiResponse.onSuccess(Status.OK.getCode(),
+                Status.CREATED.getMessage(), null);
     }
 
 }

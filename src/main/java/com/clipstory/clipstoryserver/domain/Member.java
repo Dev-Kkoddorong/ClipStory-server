@@ -1,5 +1,6 @@
 package com.clipstory.clipstoryserver.domain;
 
+import com.clipstory.clipstoryserver.requestDto.MemberRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -73,6 +74,15 @@ public class Member implements UserDetails {
     public static Member toEntity(String name) {
         return Member.builder()
                 .name(name)
+                .build();
+    }
+
+    public static Member toEntity(MemberRequestDto memberRequestDto, PasswordEncoder passwordEncoder) {
+        return Member.builder()
+                .customId(memberRequestDto.getCustomId())
+                .name(memberRequestDto.getName())
+                .role(Role.USER)
+                .password(passwordEncoder.encode(memberRequestDto.getPassword()))
                 .build();
     }
 

@@ -37,4 +37,12 @@ public class MemberService {
                 .orElseThrow(() -> new GeneralException(Status.MEMBER_NOT_FOUND));
     }
 
+    public void save(Member member){
+        memberRepository.save(member);
+    }
+
+    public boolean isMemberExist(String customId) {
+        return memberRepository.existsByCustomId(customId);
+    }
+
 }
