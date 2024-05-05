@@ -24,6 +24,13 @@ public enum Status {
 
     //Member 오류 응답
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER404", "존재하지 않는 회원입니다."),
+    MEMBER_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "MEMBER401", "회원 인증이 되지 않았습니다."),
+
+    //JWT 오류 응답
+    JWT_WRONG_TYPE_TOKEN(HttpStatus.BAD_REQUEST, "JWT400", "JWT 타입이 틀렸습니다."),
+    JWT_EXPIRED_TOKEN(HttpStatus.BAD_REQUEST, "JWT400", "JWT가 만료되었습니다."),
+    JWT_NULL(HttpStatus.UNAUTHORIZED, "JWT401", "JWT가 NULL입니다."),
+    JWT_INVALID(HttpStatus.FORBIDDEN, "JWT403", "JWT가 유효하지 않습니다."),
 
     //TAG 오류 응답
     TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "TAG404", "존재하지 않는 태그입니다."),
