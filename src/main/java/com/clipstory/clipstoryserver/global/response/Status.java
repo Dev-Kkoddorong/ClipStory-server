@@ -25,6 +25,7 @@ public enum Status {
     //Member 오류 응답
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER404", "존재하지 않는 회원입니다."),
     MEMBER_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "MEMBER401", "회원 인증이 되지 않았습니다."),
+    MEMBER_ALREADY_EXIST(HttpStatus.CONFLICT, "MEMBER409", "이미 존재하는 아이디입니다."),
 
     //JWT 오류 응답
     JWT_WRONG_TYPE_TOKEN(HttpStatus.BAD_REQUEST, "JWT400", "JWT 타입이 틀렸습니다."),

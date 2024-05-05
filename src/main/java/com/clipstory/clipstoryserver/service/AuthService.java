@@ -7,6 +7,7 @@ import com.clipstory.clipstoryserver.global.auth.JwtProvider;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.requestDto.LoginRequestDto;
+import com.clipstory.clipstoryserver.requestDto.MemberRequestDto;
 import com.clipstory.clipstoryserver.responseDto.JwtResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,14 @@ public class AuthService {
                 .accessToken(token.getAccessToken())
                 .refreshToken(token.getRefreshToken())
                 .build();
+    }
+
+    public void signUp(MemberRequestDto memberRequestDto){
+        String customId = memberRequestDto.getCustomId();
+        if (memberService.isMemberExist(customId))
+            throw new GeneralException(Status.MEMBER_ALREADY_EXIST);
+        Member member = Member.toEntity(memberRequestDto, passwordEncoder);
+        memberService.save(member);
     }
 
 }
