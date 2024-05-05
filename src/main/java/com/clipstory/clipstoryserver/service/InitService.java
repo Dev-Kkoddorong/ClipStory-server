@@ -91,7 +91,7 @@ public class InitService {
             Instant instant = Instant.ofEpochSecond(timeStamp);
             LocalDateTime createdAt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-            memberService.findOrCreateMember(memberCustomId, memberCustomId.toString());
+            memberService.findOrCreateMember(memberCustomId);
 
             Member member = memberService.findMemberByCustomId(memberCustomId);
             Movie movie = null;
@@ -124,7 +124,7 @@ public class InitService {
             Instant instant = Instant.ofEpochSecond(timeStamp);
             LocalDateTime createdAt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-            memberService.findOrCreateMember(memberCustomId, memberCustomId.toString());
+            memberService.findOrCreateMember(memberCustomId);
 
             Member member = memberService.findMemberByCustomId(memberCustomId);
             Movie movie = null;

@@ -1,7 +1,6 @@
 package com.clipstory.clipstoryserver.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,7 +23,10 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
     private String customId;
+
+    private String password;
 
     private String name;
 
@@ -42,10 +44,11 @@ public class Member {
         this.ratingList.add(rating);
     }
 
-    public static Member toEntity(String customId, String name) {
+    public static Member toEntity(String customId, String name, String password) {
         return Member.builder()
                 .customId(customId)
                 .name(name)
+                .password(password)
                 .build();
     }
 
