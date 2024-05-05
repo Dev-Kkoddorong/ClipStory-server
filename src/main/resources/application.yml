@@ -21,3 +21,10 @@ spring:
         hbm2ddl:
           auto: update
         default_batch_fetch_size: 1000
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  header: ${JWT_HEADER}
+  token-prefix: ${JWT_TOKEN_PREFIX}
+  access-token-duration: ${JWT_ACCESS_TOKEN_DURATION}
+  refresh-token-duration: ${JWT_REFRESH_TOKEN_DURATION}
