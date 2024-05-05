@@ -103,7 +103,7 @@ public class InitService {
     }
 
     public void addRatings() throws IOException {
-        ClassPathResource resource = new ClassPathResource("static/ratings0.csv");
+        ClassPathResource resource = new ClassPathResource("static/ratings.csv");
         File moviesCsv = resource.getFile();
 
         BufferedReader br = null;
