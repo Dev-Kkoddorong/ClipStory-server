@@ -7,13 +7,10 @@ import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.MovieRepository;
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
-import com.clipstory.clipstoryserver.responseDto.MovieSuggestionService;
 import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

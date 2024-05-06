@@ -1,11 +1,10 @@
 package com.clipstory.clipstoryserver.controller;
 
-import com.clipstory.clipstoryserver.domain.Movie;
 import com.clipstory.clipstoryserver.global.response.ApiResponse;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.requestDto.MovieSuggestionRequestDto;
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
-import com.clipstory.clipstoryserver.responseDto.MovieSuggestionService;
+import com.clipstory.clipstoryserver.service.MovieSuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
