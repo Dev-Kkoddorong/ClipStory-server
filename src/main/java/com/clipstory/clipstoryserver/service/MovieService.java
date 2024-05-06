@@ -31,9 +31,9 @@ public class MovieService {
 
     private final TagService tagService;
 
-    private final HashMap<Long, HashMap<String, Double>> movieVectors = new HashMap<>();
+    private final HashMap<Long, HashMap<String, HashMap<String, Double>>> movieVectors = new HashMap<>();
 
-    private final HashMap<Long, Double> movieVectorsMagnitude = new HashMap<>();
+    private final HashMap<Long, HashMap<String, Double>> movieVectorsMagnitude = new HashMap<>();
 
     public void createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
         Movie movie = Movie.toEntity(movieId, tId, title, genres);
@@ -72,25 +72,29 @@ public class MovieService {
         return movieRepository.findAll();
     }
 
-    public Double magnitude(Movie movie) {
-        if (movieVectorsMagnitude.get(movie.getId()) != null) {
-            return movieVectorsMagnitude.get(movie.getId());
+    public Double magnitude(Movie movie, String base) {
+        if (movieVectorsMagnitude.get(movie.getId()) == null) {
+            movieVectorsMagnitude.put(movie.getId(), new HashMap<>());
+        }
+        if (movieVectorsMagnitude.get(movie.getId()).get(base) != null) {
+            return movieVectorsMagnitude.get(movie.getId()).get(base);
         }
 
         Double magnitude = 0.0;
-        HashMap<String, Double> movieVector = getMovieVector(movie);
+        HashMap<String, Double> movieVector = getMovieVector(movie, base);
         for (Double count : movieVector.values()) {
             magnitude += count * count;
         }
 
         magnitude = Math.sqrt(magnitude);
-        movieVectorsMagnitude.put(movie.getId(), magnitude);
+
+        movieVectorsMagnitude.get(movie.getId()).put(base, magnitude);
         return magnitude;
     }
 
-    public Double dotProduct(Movie movie1, Movie movie2) {
-        HashMap<String, Double> movie1Vector = getMovieVector(movie1);
-        HashMap<String, Double> movie2Vector = getMovieVector(movie2);
+    public Double dotProduct(Movie movie1, Movie movie2, String base) {
+        HashMap<String, Double> movie1Vector = getMovieVector(movie1, base);
+        HashMap<String, Double> movie2Vector = getMovieVector(movie2, base);
 
         Set<String> keySet = new HashSet<>();
         keySet.addAll(movie1Vector.keySet());
@@ -108,19 +112,26 @@ public class MovieService {
         return dotProduct;
     }
 
-    public HashMap<String, Double> getMovieVector(Movie movie) {
-        if (movieVectors.get(movie.getId()) != null) {
-            return movieVectors.get(movie.getId());
+    public HashMap<String, Double> getMovieVector(Movie movie, String base) {
+        if (movieVectors.get(movie.getId()) == null) {
+            movieVectors.put(movie.getId(), new HashMap<>());
+        }
+        if (movieVectors.get(movie.getId()).get(base) != null) {
+            return movieVectors.get(movie.getId()).get(base);
         }
 
         HashMap<String, Double> movieVector = new HashMap<>();
-        for (Genre genre : movie.getGenres()) {
-            movieVector.merge(genre.getName(), MovieSuggestionService.GENRE_WEIGHT, Double::sum);
+        if (base.equals("GENRE")) {
+            for (Genre genre : movie.getGenres()) {
+                movieVector.merge(genre.getName(), 1.0, Double::sum);
+            }
+        } else if (base.equals("TAG")) {
+            for (Tag tag : tagService.getTagsByMovieId(movie.getId())) {
+                movieVector.merge(tag.getContent(), 1.0, Double::sum);
+            }
         }
-        for (Tag tag : tagService.getTagsByMovieId(movie.getId())) {
-            movieVector.merge(tag.getContent(), 1.0, Double::sum);
-        }
-        movieVectors.put(movie.getId(), movieVector);
+
+        movieVectors.get(movie.getId()).put(base, movieVector);
         return movieVector;
     }
 }

@@ -33,7 +33,9 @@ public class MovieSuggestionService {
 
     private static final Double SIMILARITY_TO_PASS = 0.90;
 
-    public static final Double GENRE_WEIGHT = 3.0;
+    private static final Double GENRE_SIMILARITY_TO_PASS = 0.9;
+
+    private static final Double TAG_SIMILARITY_TO_PASS = 0.0;
 
     public List<MovieResponseDto> getLikableMovies(MovieSuggestionRequestDto movieSuggestionRequestDto) {
         List<Movie> likeMovies = movieSuggestionRequestDto.getLikeMovieIdList()
@@ -76,11 +78,8 @@ public class MovieSuggestionService {
                 continue;
             }
 
-            Double similarity = calculateSimilarity(myMovie, movie);
-            //log.info(similarity.toString());
-
-            if (similarity >= SIMILARITY_TO_PASS) {
-                /*log.info(myMovie.getTitle());
+            if (isSimilarMovie(myMovie, movie)) {
+                 /*log.info(myMovie.getTitle());
                 log.info(movie.getTitle());
                 log.info(similarity.toString());
                 log.info("");*/
@@ -90,17 +89,27 @@ public class MovieSuggestionService {
         return similarMovies;
     }
 
-    private Double calculateSimilarity(Movie movie1, Movie movie2) {
-        return CosineSimilarity(movie1, movie2);
+    boolean isSimilarMovie(Movie movie1, Movie movie2) {
+        Double genreSimilarity = CosineSimilarityByBase(movie1, movie2,"GENRE");
+        if (genreSimilarity >= GENRE_SIMILARITY_TO_PASS) {
+            return true;
+        }
+
+        Double tagSimilarity = CosineSimilarityByBase(movie1, movie2,"TAG");
+        if (tagSimilarity > TAG_SIMILARITY_TO_PASS) {
+            return true;
+        }
+
+        return false;
     }
 
-    private Double CosineSimilarity(Movie movie1, Movie movie2) {
-        Double d = movieService.dotProduct(movie1, movie2);
-        Double m1 = movieService.magnitude(movie1);
-        Double m2 = movieService.magnitude(movie2);
+    private Double CosineSimilarityByBase(Movie movie1, Movie movie2, String base) {
+        Double d = movieService.dotProduct(movie1, movie2, base);
+        Double m1 = movieService.magnitude(movie1, base);
+        Double m2 = movieService.magnitude(movie2, base);
 
-        return d / (m1 * m2);
+        Double result = (m1 == 0.0 || m2 == 0.0 ? 0.0 : (d / (m1 * m2)));
+        return result;
     }
-
 
 }
