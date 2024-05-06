@@ -23,4 +23,8 @@ public class RatingService {
         return ratingRepository.findAverageRatingByMovieId(movieId);
     }
 
+    public Long countRatingByMovieId(Long movieId) {
+        return ratingRepository.countRatingByMovieId(movieId);
+    }
+
 }

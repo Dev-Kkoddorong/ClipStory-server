@@ -1,8 +1,9 @@
-package com.clipstory.clipstoryserver.responseDto;
+package com.clipstory.clipstoryserver.service;
 
 import com.clipstory.clipstoryserver.domain.Movie;
 import com.clipstory.clipstoryserver.repository.MovieRepository;
 import com.clipstory.clipstoryserver.requestDto.MovieSuggestionRequestDto;
+import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
 import com.clipstory.clipstoryserver.service.MovieService;
 import com.clipstory.clipstoryserver.service.RatingService;
 import com.clipstory.clipstoryserver.service.TagService;
@@ -31,11 +32,11 @@ public class MovieSuggestionService {
 
     private static final int SUGGESTION_MOVIE_SIZE = 3;
 
-    private static final Double SIMILARITY_TO_PASS = 0.90;
-
     private static final Double GENRE_SIMILARITY_TO_PASS = 0.9;
 
     private static final Double TAG_SIMILARITY_TO_PASS = 0.0;
+
+    private static final Long COUNT_RATING_TO_PASS = 5L;
 
     public List<MovieResponseDto> getLikableMovies(MovieSuggestionRequestDto movieSuggestionRequestDto) {
         List<Movie> likeMovies = movieSuggestionRequestDto.getLikeMovieIdList()
@@ -76,15 +77,13 @@ public class MovieSuggestionService {
         for (Movie movie : movieService.findAllMovies()) {
             if (Objects.equals(movie.getId(), myMovie.getId())) {
                 continue;
+            } if (ratingService.countRatingByMovieId(movie.getId()) < COUNT_RATING_TO_PASS) {
+                continue;
+            } if (!isSimilarMovie(myMovie, movie)) {
+                continue;
             }
 
-            if (isSimilarMovie(myMovie, movie)) {
-                 /*log.info(myMovie.getTitle());
-                log.info(movie.getTitle());
-                log.info(similarity.toString());
-                log.info("");*/
-                similarMovies.add(movie);
-            }
+            similarMovies.add(movie);
         }
         return similarMovies;
     }
