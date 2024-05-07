@@ -35,6 +35,9 @@ public enum Status {
 
     //TAG 오류 응답
     TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "TAG404", "존재하지 않는 태그입니다."),
+
+    //Rating 오류 응답
+    RATING_NOT_FOUND(HttpStatus.NOT_FOUND, "RATING404", "존재하지 않는 평점입니다."),
     ;
 
     private final HttpStatus httpStatus;

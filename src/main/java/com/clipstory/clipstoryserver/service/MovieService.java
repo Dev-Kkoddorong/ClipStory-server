@@ -2,6 +2,7 @@ package com.clipstory.clipstoryserver.service;
 
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
+import com.clipstory.clipstoryserver.domain.Rating;
 import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
@@ -37,25 +38,29 @@ public class MovieService {
         movieRepository.save(movie);
     }
 
+    public void updateMovie(Movie movie) {
+        movieRepository.save(movie);
+    }
+
     public PagedResponseDto<MovieResponseDto> getMovies(Pageable pageable) {
         Page<Movie> movies = movieRepository.findAll(pageable);
         return new PagedResponseDto<>(movies.
                 map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, ratingService.getAverageRating(movie.getId()),
+                        movie, movie.getAverageRating(),
                         tagService.getTagsByMovieId(movie.getId()))));
     }
 
     public MovieResponseDto getMovie(Long movieId) {
         Movie movie = findMovieById(movieId);
         return MovieResponseDto.toMovieResponseDto(movie,
-                ratingService.getAverageRating(movieId), tagService.getTagsByMovieId(movie.getId()));
+                movie.getAverageRating(), tagService.getTagsByMovieId(movie.getId()));
     }
 
     public PagedResponseDto<MovieResponseDto> getMovieByPartOfTitle(String partOfTitle, Pageable pageable) {
         Page<Movie> movies = movieRepository.findByTitleContainingKeyword(partOfTitle, pageable);
         return new PagedResponseDto<>(movies.
                 map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, ratingService.getAverageRating(movie.getId()),
+                        movie, movie.getAverageRating(),
                         tagService.getTagsByMovieId(movie.getId()))));
     }
 
@@ -131,4 +136,12 @@ public class MovieService {
         movieVectors.get(movie.getId()).put(base, movieVector);
         return movieVector;
     }
+
+
+    public void calculateAverageRating(Movie movie) {
+
+
+    }
+
 }
+
