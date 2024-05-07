@@ -3,6 +3,7 @@ package com.clipstory.clipstoryserver.repository;
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
 import com.clipstory.clipstoryserver.domain.Rating;
+import com.clipstory.clipstoryserver.service.InitService;
 import jakarta.transaction.Transactional;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -54,8 +55,7 @@ public class BulkRepository {
     }
 
     @Transactional
-    public void asdf (List<Movie> movieList) {
-
+    public void saveAllMovieGenres (List<InitService.MovieGenre> movieGenreList) {
 
         String insertMovieGenreSQL = "INSERT INTO movie_genres (genres_id, movie_id)" +
                 "VALUES (?, ?)";
@@ -63,36 +63,17 @@ public class BulkRepository {
                 new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        Movie movie = movieList.get(i);
-                        Long movieId = movie.getId();
-                        Set<Genre> genres = movie.getGenres();
+                        InitService.MovieGenre movieGenre = movieGenreList.get(i);
+                        Long movieId = movieGenre.movieId;
+                        Long genreId = movieGenre.genreId;
 
-                 /*       int size = 0;
-                        for(Movie m : movieList) {
-                            size += m.getGenres().size();
-                        }
-                        log.info(String.valueOf(size));
-*/
-                        Iterator<Genre> iterSet = genres.iterator();
-                        while(iterSet.hasNext()) {
-                            Genre g = iterSet.next();
-                            ps.setLong(1, g.getId());
-                            ps.setLong(2, movieId);
-
-                            log.info(movieId + " " + g.getName());
-                        }
-                        //ps.addBatch();
-/*
-                        ps.execute();
-                        log.info("실행함");
-                        ps.clearBatch();
-                        log.info("지움");*/
-
+                        ps.setLong(1, genreId);
+                        ps.setLong(2, movieId);
                     }
 
                     @Override
                     public int getBatchSize() {
-                        return movieList.size();
+                        return movieGenreList.size();
                     }
                 });
     }

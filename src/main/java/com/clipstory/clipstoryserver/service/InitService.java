@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +44,19 @@ public class InitService {
 
     private final BulkRepository bulkRepository;
 
+    public class MovieGenre {
+
+        public Long movieId;
+
+        public Long genreId;
+
+        MovieGenre(Long movieId, Long genreId) {
+            this.movieId = movieId;
+            this.genreId = genreId;
+        }
+
+    }
+
     public void addMovies() throws IOException {
         ClassPathResource resource = new ClassPathResource("static/movies.csv");
         File moviesCsv = resource.getFile();
@@ -58,11 +72,13 @@ public class InitService {
         br.readLine();
 
         List<Movie> movieList = new ArrayList<>();
+        List<MovieGenre> movieGenreList = new ArrayList<>();
         while ((line = br.readLine()) != null) {
             if (movieList.size() >= 100) {
                 bulkRepository.saveAllMovies(movieList);
-                bulkRepository.asdf(movieList);
+                bulkRepository.saveAllMovieGenres(movieGenreList);
                 movieList.clear();
+                movieGenreList.clear();
             }
             String[] token = line.split(",");
             Long movieId = Long.parseLong(token[0]);
@@ -81,10 +97,18 @@ public class InitService {
                     .collect(Collectors.toSet());
 
             Movie movie = movieService.createMovie(movieId, tId, title, genres);
+
+            Iterator<Genre> iterSet = genres.iterator();
+            while(iterSet.hasNext()) {
+                Genre g = iterSet.next();
+                MovieGenre movieGenre = new MovieGenre(movieId, g.getId());
+                movieGenreList.add(movieGenre);
+            }
+
             movieList.add(movie);
         }
         bulkRepository.saveAllMovies(movieList);
-        bulkRepository.asdf(movieList);
+        bulkRepository.saveAllMovieGenres(movieGenreList);
     }
 
     public void addTags() throws IOException {
