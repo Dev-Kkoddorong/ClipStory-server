@@ -58,8 +58,8 @@ public class MovieSuggestionService {
                 )
                 .sorted(Comparator.comparingDouble(
                         MovieResponseDto::getAverageRating
-                        ).reversed()).toList();
-                //.subList(0, SUGGESTION_MOVIE_SIZE);
+                        ).reversed()).toList()
+                .subList(0, Math.min(SUGGESTION_MOVIE_SIZE, similarMovies.size()));
     }
 
     public Set<Movie> getSimilarMovies(List<Movie> movies) {
@@ -77,7 +77,6 @@ public class MovieSuggestionService {
             if (Objects.equals(movie.getId(), myMovie.getId())) {
                 continue;
             }
-            log.info(String.valueOf(movie.getRatings().size()) );
             if (movie.getRatings().size() < COUNT_RATING_TO_PASS) {
                 continue;
             }

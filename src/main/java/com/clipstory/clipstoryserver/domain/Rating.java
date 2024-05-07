@@ -29,7 +29,7 @@ public class Rating {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JoinColumn(name = "movie_id")
     private Movie movie;
 
     private Double score;

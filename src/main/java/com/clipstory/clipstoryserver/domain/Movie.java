@@ -32,7 +32,7 @@ public class Movie {
 
     private Double averageRating;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "id")
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "movie")
     @JsonBackReference
     public List<Rating> ratings;
 
