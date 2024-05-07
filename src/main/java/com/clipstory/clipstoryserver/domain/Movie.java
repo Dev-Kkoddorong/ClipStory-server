@@ -1,9 +1,16 @@
 package com.clipstory.clipstoryserver.domain;
 
 import com.clipstory.clipstoryserver.service.GenreService;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.ManyToMany;
+
 
 import java.sql.Wrapper;
 import java.util.*;
@@ -53,7 +60,7 @@ public class Movie {
         this.averageRating = averageRating;
     }
 
-    public void calculateAverageRating() {
+    public Movie calculateAverageRating() {
         Double averageRating = 0.0;
         log.info(String.valueOf(ratings.size()));
         for (Rating rating : ratings) {
@@ -66,6 +73,7 @@ public class Movie {
         }
 
         updateAverageRating(averageRating);
+        return this;
     }
 
 }

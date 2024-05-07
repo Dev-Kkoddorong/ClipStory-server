@@ -52,10 +52,12 @@ public class MovieSuggestionService {
         similarMovies.removeAll(getSimilarMovies(hateMovies));
 
         return similarMovies.stream()
-                .map(movie -> MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(), tagService.getTagsByMovieId(movie.getId())
+                .map(movie ->
+                        MovieResponseDto.toMovieResponseDto(
+                                movie, movie.getAverageRating(),
+                                tagService.getTagsByMovieId(movie.getId()),
+                                movieService.addMovieInformation(movie))
                     )
-                )
                 .sorted(Comparator.comparingDouble(
                         MovieResponseDto::getAverageRating
                         ).reversed()).toList()

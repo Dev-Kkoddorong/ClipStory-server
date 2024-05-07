@@ -17,8 +17,7 @@ public class RatingService {
     private final RatingRepository ratingRepository;
 
     public Rating createRating(Member member, Movie movie, Double score, LocalDateTime createdAt) {
-        Rating rating = Rating.toEntity(member, movie, score, createdAt);
-        return ratingRepository.save(rating);
+        return Rating.toEntity(member, movie, score, createdAt);
     }
 
     public Rating findRatingById(Long id) {

@@ -34,7 +34,6 @@ public class Rating {
 
     private Double score;
 
-    @CreatedDate
     private LocalDateTime createdAt;
 
     public static Rating toEntity(Member member, Movie movie, Double score, LocalDateTime createdAt) {
