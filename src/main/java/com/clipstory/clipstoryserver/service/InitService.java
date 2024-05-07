@@ -10,17 +10,19 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import com.clipstory.clipstoryserver.domain.Rating;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import java.io.File;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class InitService {
 
     private final MovieService movieService;
@@ -103,7 +105,7 @@ public class InitService {
     }
 
     public void addRatings() throws IOException {
-        ClassPathResource resource = new ClassPathResource("static/ratings.csv");
+        ClassPathResource resource = new ClassPathResource("static/ratings0.csv");
         File moviesCsv = resource.getFile();
 
         BufferedReader br = null;
@@ -124,13 +126,17 @@ public class InitService {
             Instant instant = Instant.ofEpochSecond(timeStamp);
             LocalDateTime createdAt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-            memberService.findOrCreateMember(memberCustomId);
+            Member member = memberService.findOrCreateMember(memberCustomId);
+            Movie movie = movieService.findMovieById(movieId);
 
-            Member member = memberService.findMemberByCustomId(memberCustomId);
-            Movie movie = null;
-            movie = movieService.findMovieById(movieId);
+            Rating rating =  ratingService.createRating(member, movie, score, createdAt);
+            movie.addRating(rating);
+        }
 
-            ratingService.createRating(member, movie, score, createdAt);
+        for (Movie movie : movieService.findAllMovies()) {
+            log.info(String.valueOf(movie.getRatings().size()));
+            movie.calculateAverageRating();
+            movieService.updateMovie(movie);
         }
     }
 

@@ -53,14 +53,13 @@ public class MovieSuggestionService {
 
         return similarMovies.stream()
                 .map(movie -> MovieResponseDto.toMovieResponseDto(
-                        movie, ratingService.getAverageRating(movie.getId()), tagService.getTagsByMovieId(movie.getId())
+                        movie, movie.getAverageRating(), tagService.getTagsByMovieId(movie.getId())
                     )
                 )
                 .sorted(Comparator.comparingDouble(
-                            (MovieResponseDto movieResponseDto) -> movieResponseDto.getAverageRating() == null ? 0 : movieResponseDto.getAverageRating()
-                        ).reversed()
-                )
-                .toList().subList(0, SUGGESTION_MOVIE_SIZE);
+                        MovieResponseDto::getAverageRating
+                        ).reversed()).toList();
+                //.subList(0, SUGGESTION_MOVIE_SIZE);
     }
 
     public Set<Movie> getSimilarMovies(List<Movie> movies) {
@@ -77,9 +76,12 @@ public class MovieSuggestionService {
         for (Movie movie : movieService.findAllMovies()) {
             if (Objects.equals(movie.getId(), myMovie.getId())) {
                 continue;
-            } if (ratingService.countRatingByMovieId(movie.getId()) < COUNT_RATING_TO_PASS) {
+            }
+            log.info(String.valueOf(movie.getRatings().size()) );
+            if (movie.getRatings().size() < COUNT_RATING_TO_PASS) {
                 continue;
-            } if (!isSimilarMovie(myMovie, movie)) {
+            }
+            if (!isSimilarMovie(myMovie, movie)) {
                 continue;
             }
 
@@ -107,8 +109,8 @@ public class MovieSuggestionService {
         Double m1 = movieService.magnitude(movie1, base);
         Double m2 = movieService.magnitude(movie2, base);
 
-        Double result = (m1 == 0.0 || m2 == 0.0 ? 0.0 : (d / (m1 * m2)));
-        return result;
+        Double similarity = (m1 == 0.0 || m2 == 0.0 ? 0.0 : (d / (m1 * m2)));
+        return similarity;
     }
 
 }
