@@ -3,6 +3,7 @@ package com.clipstory.clipstoryserver.repository;
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
 import com.clipstory.clipstoryserver.domain.Rating;
+import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.service.InitService;
 import jakarta.transaction.Transactional;
 import java.sql.PreparedStatement;
@@ -48,10 +49,6 @@ public class BulkRepository {
                         return movieList.size();
                     }
                 });
-
-       // asdf(movieList);
-
-
     }
 
     @Transactional
@@ -119,6 +116,30 @@ public class BulkRepository {
                         return movieList.size();
                     }
                 });
+    }
+
+    @Transactional
+    public void saveAllTags(List<Tag> tagList) {
+        String sql = "INSERT INTO tag (content, member_id, movie_id, created_at)" +
+                "VALUES (?, ?, ?, ?)";
+
+        jdbcTemplate.batchUpdate(sql,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        Tag tag = tagList.get(i);
+                        ps.setString(1, tag.getContent());
+                        ps.setLong(2, tag.getMember().getId());
+                        ps.setLong(3, tag.getMovie().getId());
+                        ps.setObject(4, tag.getCreatedAt());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return tagList.size();
+                    }
+                });
+
     }
 
 }

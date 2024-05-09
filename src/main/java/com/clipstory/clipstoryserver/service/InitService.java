@@ -3,6 +3,7 @@ package com.clipstory.clipstoryserver.service;
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Member;
 import com.clipstory.clipstoryserver.domain.Movie;
+import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.repository.BulkRepository;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -124,7 +125,12 @@ public class InitService {
 
         String line = null;
         br.readLine();
+        List<Tag> tagList = new ArrayList<>();
         while ((line = br.readLine()) != null) {
+            if (tagList.size() == 100) {
+                bulkRepository.saveAllTags(tagList);
+                tagList.clear();
+            }
             String[] token = line.split(",");
             String memberCustomId = token[0];
             Long movieId = Long.parseLong(token[1]);
@@ -136,9 +142,15 @@ public class InitService {
             memberService.findOrCreateMember(memberCustomId);
 
             Member member = memberService.findMemberByCustomId(memberCustomId);
-            Movie movie = null;
-            movie = movieService.findMovieById(movieId);
-            tagService.createTag(member, movie, tagContent, createdAt);
+            Movie movie = movieService.findMovieById(movieId);
+            Tag tag = tagService.createTag(member, movie, tagContent, createdAt);
+            tagList.add(tag);
+        }
+        bulkRepository.saveAllTags(tagList);
+
+        for (Tag tag : tagService.getAllTag()) {
+            Movie movie = tag.getMovie();
+            movie.addTag(tag);
         }
     }
 
@@ -164,8 +176,8 @@ public class InitService {
             String[] token = line.split(",");
             String memberCustomId = token[0];
             Long movieId = Long.parseLong(token[1]);
-            log.info("movieId" + movieId);
-            log.info("memberCustomId" + memberCustomId);
+           /* log.info("movieId" + movieId);
+            log.info("memberCustomId" + memberCustomId);*/
             Double score = Double.parseDouble(token[2]);
             Long timeStamp = Long.parseLong(token[3]);
             Instant instant = Instant.ofEpochSecond(timeStamp);

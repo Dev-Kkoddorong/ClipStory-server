@@ -43,6 +43,10 @@ public class Movie {
     @JsonBackReference
     public List<Rating> ratings;
 
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "movie")
+    @JsonBackReference
+    public List<Tag> tags;
+
     public static Movie toEntity(Long id, Long tId, String title, Set<Genre> genres) {
         return Movie.builder()
                 .id(id)
@@ -54,6 +58,10 @@ public class Movie {
 
     public void addRating(Rating rating) {
         ratings.add(rating);
+    }
+
+    public void addTag(Tag tag) {
+        tags.add(tag);
     }
 
     public void updateAverageRating(Double averageRating) {
