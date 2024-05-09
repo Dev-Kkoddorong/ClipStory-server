@@ -21,26 +21,10 @@ public class InitController {
 
     private final InitService initService;
 
-    @GetMapping("/movies")
-    @Operation(summary = "DB에 영화 데이터 적재")
-    public ApiResponse<?> addMovies() throws IOException {
-        initService.addMovies();
-        return ApiResponse.onSuccess(Status.OK.getCode(),
-                Status.CREATED.getMessage(), null);
-    }
-
-    @GetMapping("/tags")
-    @Operation(summary = "DB에 태그 데이터 적재")
-    public ApiResponse<?> addTags() throws IOException {
-        initService.addTags();
-        return ApiResponse.onSuccess(Status.OK.getCode(),
-                Status.CREATED.getMessage(), null);
-    }
-
-    @GetMapping("/ratings")
-    @Operation(summary = "DB에 평점 데이터 적재")
-    public ApiResponse<?> addRatings() throws IOException {
-        initService.addRatings();
+    @GetMapping("/")
+    @Operation(summary = "DB에 데이터 적재")
+    public ApiResponse<?> init() throws IOException {
+        initService.addData();
         return ApiResponse.onSuccess(Status.OK.getCode(),
                 Status.CREATED.getMessage(), null);
     }

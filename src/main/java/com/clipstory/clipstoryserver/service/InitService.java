@@ -45,17 +45,10 @@ public class InitService {
 
     private final BulkRepository bulkRepository;
 
-    public class MovieGenre {
-
-        public Long movieId;
-
-        public Long genreId;
-
-        MovieGenre(Long movieId, Long genreId) {
-            this.movieId = movieId;
-            this.genreId = genreId;
-        }
-
+    public void addData() throws IOException {
+        addMovies();
+        addRatings();
+        addTags();
     }
 
     public void addMovies() throws IOException {
@@ -71,9 +64,9 @@ public class InitService {
 
         String line = null;
         br.readLine();
-
         List<Movie> movieList = new ArrayList<>();
         List<MovieGenre> movieGenreList = new ArrayList<>();
+
         while ((line = br.readLine()) != null) {
             if (movieList.size() >= 100) {
                 bulkRepository.saveAllMovies(movieList);
@@ -81,11 +74,12 @@ public class InitService {
                 movieList.clear();
                 movieGenreList.clear();
             }
+
             String[] token = line.split(",");
             Long movieId = Long.parseLong(token[0]);
             String[] genre = token[token.length - 1].split("\\|");
-
             StringBuilder titleBuilder = new StringBuilder();
+
             for(int i = 1; i < token.length - 1; i++) {
                 titleBuilder.append(token[i]);
                 if(i != token.length-2) titleBuilder.append(",");
@@ -131,6 +125,7 @@ public class InitService {
                 bulkRepository.saveAllTags(tagList);
                 tagList.clear();
             }
+
             String[] token = line.split(",");
             String memberCustomId = token[0];
             Long movieId = Long.parseLong(token[1]);
@@ -155,7 +150,7 @@ public class InitService {
     }
 
     public void addRatings() throws IOException {
-        ClassPathResource resource = new ClassPathResource("static/ratings0.csv");
+        ClassPathResource resource = new ClassPathResource("static/ratings.csv");
         File moviesCsv = resource.getFile();
 
         BufferedReader br = null;
@@ -176,8 +171,6 @@ public class InitService {
             String[] token = line.split(",");
             String memberCustomId = token[0];
             Long movieId = Long.parseLong(token[1]);
-           /* log.info("movieId" + movieId);
-            log.info("memberCustomId" + memberCustomId);*/
             Double score = Double.parseDouble(token[2]);
             Long timeStamp = Long.parseLong(token[3]);
             Instant instant = Instant.ofEpochSecond(timeStamp);
@@ -207,6 +200,19 @@ public class InitService {
             movieList.add(updatedMovie);
         }
         bulkRepository.saveAllAverageRatingRatings(movieList);
+    }
+
+    public class MovieGenre {
+
+        public Long movieId;
+
+        public Long genreId;
+
+        MovieGenre(Long movieId, Long genreId) {
+            this.movieId = movieId;
+            this.genreId = genreId;
+        }
+
     }
 
 }
