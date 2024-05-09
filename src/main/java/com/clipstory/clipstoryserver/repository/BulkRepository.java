@@ -103,7 +103,7 @@ public class BulkRepository {
 
     @Transactional
     public void saveAllAverageRatingRatings(List<Movie> movieList) {
-        String sql = "UPDATE table_name SET average_rating = ?, WHERE id = ?";
+        String sql = "UPDATE movie SET average_rating = ? WHERE id = ?";
 
         jdbcTemplate.batchUpdate(sql,
                 new BatchPreparedStatementSetter() {

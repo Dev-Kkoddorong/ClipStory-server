@@ -138,14 +138,12 @@ public class InitService {
             Member member = memberService.findMemberByCustomId(memberCustomId);
             Movie movie = null;
             movie = movieService.findMovieById(movieId);
-
-
             tagService.createTag(member, movie, tagContent, createdAt);
         }
     }
 
     public void addRatings() throws IOException {
-        ClassPathResource resource = new ClassPathResource("static/ratings.csv");
+        ClassPathResource resource = new ClassPathResource("static/ratings0.csv");
         File moviesCsv = resource.getFile();
 
         BufferedReader br = null;
@@ -178,9 +176,14 @@ public class InitService {
 
             Rating rating =  ratingService.createRating(member, movie, score, createdAt);
             ratingList.add(rating);
-            //movie.addRating(rating);
+
         }
         bulkRepository.saveAllRatings(ratingList);
+
+        for (Rating rating : ratingService.getAllRatings()) {
+            Movie movie = rating.getMovie();
+            movie.addRating(rating);
+        }
 
         List<Movie> movieList = new ArrayList<>();
         for (Movie movie : movieService.findAllMovies()) {

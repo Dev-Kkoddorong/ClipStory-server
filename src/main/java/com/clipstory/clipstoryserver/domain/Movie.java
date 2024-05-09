@@ -62,9 +62,7 @@ public class Movie {
 
     public Movie calculateAverageRating() {
         Double averageRating = 0.0;
-        log.info(String.valueOf(ratings.size()));
         for (Rating rating : ratings) {
-            log.info("평점 아이디 " + (rating.getId()));
             averageRating += rating.getScore();
         }
 
