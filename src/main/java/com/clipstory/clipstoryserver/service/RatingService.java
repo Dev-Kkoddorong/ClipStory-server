@@ -7,6 +7,7 @@ import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.RatingRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +18,7 @@ public class RatingService {
     private final RatingRepository ratingRepository;
 
     public Rating createRating(Member member, Movie movie, Double score, LocalDateTime createdAt) {
-        Rating rating = Rating.toEntity(member, movie, score, createdAt);
-        return ratingRepository.save(rating);
+        return Rating.toEntity(member, movie, score, createdAt);
     }
 
     public Rating findRatingById(Long id) {
@@ -28,6 +28,10 @@ public class RatingService {
 
     public Double getAverageRatingByMovieId(Long movieId) {
         return ratingRepository.findAverageRatingByMovieId(movieId);
+    }
+
+    public List<Rating> getAllRatings() {
+        return ratingRepository.findAll();
     }
 
 }

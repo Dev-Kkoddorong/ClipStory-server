@@ -1,9 +1,16 @@
 package com.clipstory.clipstoryserver.domain;
 
 import com.clipstory.clipstoryserver.service.GenreService;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.ManyToMany;
+
 
 import java.sql.Wrapper;
 import java.util.*;
@@ -36,6 +43,10 @@ public class Movie {
     @JsonBackReference
     public List<Rating> ratings;
 
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "movie")
+    @JsonBackReference
+    public List<Tag> tags;
+
     public static Movie toEntity(Long id, Long tId, String title, Set<Genre> genres) {
         return Movie.builder()
                 .id(id)
@@ -49,15 +60,17 @@ public class Movie {
         ratings.add(rating);
     }
 
+    public void addTag(Tag tag) {
+        tags.add(tag);
+    }
+
     public void updateAverageRating(Double averageRating) {
         this.averageRating = averageRating;
     }
 
-    public void calculateAverageRating() {
+    public Movie calculateAverageRating() {
         Double averageRating = 0.0;
-        log.info(String.valueOf(ratings.size()));
         for (Rating rating : ratings) {
-            log.info("평점 아이디 " + (rating.getId()));
             averageRating += rating.getScore();
         }
 
@@ -66,6 +79,7 @@ public class Movie {
         }
 
         updateAverageRating(averageRating);
+        return this;
     }
 
 }

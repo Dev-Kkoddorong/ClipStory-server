@@ -7,6 +7,7 @@ import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.MovieRepository;
+import com.clipstory.clipstoryserver.responseDto.MovieExtraInformationResponseDto;
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
 import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 
@@ -14,9 +15,12 @@ import java.util.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 @RequiredArgsConstructor
 @Service
@@ -33,9 +37,18 @@ public class MovieService {
 
     private final HashMap<Long, HashMap<String, Double>> movieVectorsMagnitude = new HashMap<>();
 
-    public void createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
-        Movie movie = Movie.toEntity(movieId, tId, title, genres);
-        movieRepository.save(movie);
+    @Value("${tmdb.api_key}")
+    private String apiKey;
+
+    private final String BASE_URL = "https://api.themoviedb.org/3/movie/";
+
+    private final String LANGUAGE_FORMAT = "&language=ko-KR";
+
+    private final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200";
+
+    public Movie createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
+        //log.info("createMovie에서" + movieId);
+        return Movie.toEntity(movieId, tId, title, genres);
     }
 
     public void updateMovie(Movie movie) {
@@ -47,13 +60,16 @@ public class MovieService {
         return new PagedResponseDto<>(movies.
                 map(movie ->  MovieResponseDto.toMovieResponseDto(
                         movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()))));
+                        tagService.getTagsByMovieId(movie.getId()),
+                        addMovieInformation(movie))));
     }
 
     public MovieResponseDto getMovie(Long movieId) {
         Movie movie = findMovieById(movieId);
-        return MovieResponseDto.toMovieResponseDto(movie,
-                movie.getAverageRating(), tagService.getTagsByMovieId(movie.getId()));
+        return MovieResponseDto.toMovieResponseDto(
+                movie, movie.getAverageRating(),
+                tagService.getTagsByMovieId(movie.getId()),
+                addMovieInformation(movie));
     }
 
     public PagedResponseDto<MovieResponseDto> getMovieByPartOfTitle(String partOfTitle, Pageable pageable) {
@@ -61,7 +77,8 @@ public class MovieService {
         return new PagedResponseDto<>(movies.
                 map(movie ->  MovieResponseDto.toMovieResponseDto(
                         movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()))));
+                        tagService.getTagsByMovieId(movie.getId()),
+                        addMovieInformation(movie))));
     }
 
 
@@ -70,8 +87,27 @@ public class MovieService {
                 .orElseThrow(() -> new GeneralException(Status.MOVIE_NOT_FOUND));
     }
 
+    public Movie save(Movie movie){
+        return movieRepository.save(movie);
+    }
+
     public List<Movie> findAllMovies() {
         return movieRepository.findAll();
+    }
+
+    public MovieExtraInformationResponseDto addMovieInformation(Movie movie) {
+        Long tid = movie.getTId();
+        if (tid == null)
+            return null;
+        RestTemplate restTemplate = new RestTemplate();
+        try{
+            MovieExtraInformationResponseDto movieExtraInformationResponseDto = restTemplate.getForObject(BASE_URL + tid +
+                    "?api_key=" + apiKey + LANGUAGE_FORMAT, MovieExtraInformationResponseDto.class);
+            movieExtraInformationResponseDto.setPoster_path(IMAGE_BASE_URL + movieExtraInformationResponseDto.getPoster_path());
+            return movieExtraInformationResponseDto;
+        }catch (HttpClientErrorException ex) {
+            return null;
+        }
     }
 
     public Double magnitude(Movie movie, String base) {
