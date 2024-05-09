@@ -31,8 +31,6 @@ public class MovieResponseDto {
 
     private Double averageRating;
 
-    private List<Long> ratingIdList;
-
     private String imageUrl;
 
     private Boolean isAdult;
@@ -47,7 +45,6 @@ public class MovieResponseDto {
                 .tId(movie.getTId())
                 .genreNameList(movie.getGenres().stream().map(genre -> genre.getName()).collect(Collectors.toSet()))
                 .tagList(tagList.stream().map(tag -> tag.getContent()).collect(Collectors.toList()))
-                .ratingIdList(movie.getRatings().stream().map(rating -> rating.getId()).collect(Collectors.toList()))
                 .averageRating(averageRating)
                 .imageUrl(movieExtraInformationResponseDto.getPoster_path())
                 .isAdult(movieExtraInformationResponseDto.isAdult())
