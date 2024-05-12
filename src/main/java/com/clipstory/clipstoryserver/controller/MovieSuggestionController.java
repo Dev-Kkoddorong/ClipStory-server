@@ -8,6 +8,7 @@ import com.clipstory.clipstoryserver.service.MovieSuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class MovieSuggestionController {
     private final MovieSuggestionService movieSuggestionService;
 
     @Operation(summary = "유사한 영화 추천")
+    @Secured({"ROLE_USER"})
     @PostMapping("/similarMovie")
     public ApiResponse<List<MovieResponseDto>> getSimilarMovies(
             @RequestBody MovieSuggestionRequestDto movieSuggestionRequestDto
