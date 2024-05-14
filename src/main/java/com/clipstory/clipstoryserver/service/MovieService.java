@@ -2,26 +2,25 @@ package com.clipstory.clipstoryserver.service;
 
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
+import com.clipstory.clipstoryserver.domain.Rating;
 import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.MovieRepository;
+import com.clipstory.clipstoryserver.responseDto.MovieExtraInformationResponseDto;
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
-import com.clipstory.clipstoryserver.responseDto.MovieSuggestionService;
 import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
-import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 @RequiredArgsConstructor
 @Service
@@ -34,8 +33,25 @@ public class MovieService {
 
     private final TagService tagService;
 
-    public void createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
-        Movie movie = Movie.toEntity(movieId, tId, title, genres);
+    private final HashMap<Long, HashMap<String, HashMap<String, Double>>> movieVectors = new HashMap<>();
+
+    private final HashMap<Long, HashMap<String, Double>> movieVectorsMagnitude = new HashMap<>();
+
+    @Value("${tmdb.api_key}")
+    private String apiKey;
+
+    private final String BASE_URL = "https://api.themoviedb.org/3/movie/";
+
+    private final String LANGUAGE_FORMAT = "&language=ko-KR";
+
+    private final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200";
+
+    public Movie createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
+        //log.info("createMovie에서" + movieId);
+        return Movie.toEntity(movieId, tId, title, genres);
+    }
+
+    public void updateMovie(Movie movie) {
         movieRepository.save(movie);
     }
 
@@ -43,22 +59,26 @@ public class MovieService {
         Page<Movie> movies = movieRepository.findAll(pageable);
         return new PagedResponseDto<>(movies.
                 map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, ratingService.getAverageRating(movie.getId()),
-                        tagService.getTagsByMovieId(movie.getId()))));
+                        movie, movie.getAverageRating(),
+                        tagService.getTagsByMovieId(movie.getId()),
+                        addMovieInformation(movie))));
     }
 
     public MovieResponseDto getMovie(Long movieId) {
         Movie movie = findMovieById(movieId);
-        return MovieResponseDto.toMovieResponseDto(movie,
-                ratingService.getAverageRating(movieId), tagService.getTagsByMovieId(movie.getId()));
+        return MovieResponseDto.toMovieResponseDto(
+                movie, movie.getAverageRating(),
+                tagService.getTagsByMovieId(movie.getId()),
+                addMovieInformation(movie));
     }
 
     public PagedResponseDto<MovieResponseDto> getMovieByPartOfTitle(String partOfTitle, Pageable pageable) {
         Page<Movie> movies = movieRepository.findByTitleContainingKeyword(partOfTitle, pageable);
         return new PagedResponseDto<>(movies.
                 map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, ratingService.getAverageRating(movie.getId()),
-                        tagService.getTagsByMovieId(movie.getId()))));
+                        movie, movie.getAverageRating(),
+                        tagService.getTagsByMovieId(movie.getId()),
+                        addMovieInformation(movie))));
     }
 
 
@@ -67,24 +87,52 @@ public class MovieService {
                 .orElseThrow(() -> new GeneralException(Status.MOVIE_NOT_FOUND));
     }
 
+    public Movie save(Movie movie){
+        return movieRepository.save(movie);
+    }
+
     public List<Movie> findAllMovies() {
         return movieRepository.findAll();
     }
 
-    public Double magnitude(Movie movie) {
+    public MovieExtraInformationResponseDto addMovieInformation(Movie movie) {
+        Long tid = movie.getTId();
+        if (tid == null)
+            return null;
+        RestTemplate restTemplate = new RestTemplate();
+        try{
+            MovieExtraInformationResponseDto movieExtraInformationResponseDto = restTemplate.getForObject(BASE_URL + tid +
+                    "?api_key=" + apiKey + LANGUAGE_FORMAT, MovieExtraInformationResponseDto.class);
+            movieExtraInformationResponseDto.setPoster_path(IMAGE_BASE_URL + movieExtraInformationResponseDto.getPoster_path());
+            return movieExtraInformationResponseDto;
+        }catch (HttpClientErrorException ex) {
+            return null;
+        }
+    }
+
+    public Double magnitude(Movie movie, String base) {
+        if (movieVectorsMagnitude.get(movie.getId()) == null) {
+            movieVectorsMagnitude.put(movie.getId(), new HashMap<>());
+        }
+        if (movieVectorsMagnitude.get(movie.getId()).get(base) != null) {
+            return movieVectorsMagnitude.get(movie.getId()).get(base);
+        }
+
         Double magnitude = 0.0;
-        HashMap<String, Double> movieVector = getMovieVector(movie);
+        HashMap<String, Double> movieVector = getMovieVector(movie, base);
         for (Double count : movieVector.values()) {
             magnitude += count * count;
         }
 
         magnitude = Math.sqrt(magnitude);
+
+        movieVectorsMagnitude.get(movie.getId()).put(base, magnitude);
         return magnitude;
     }
 
-    public Double dotProduct(Movie movie1, Movie movie2) {
-        HashMap<String, Double> movie1Vector = getMovieVector(movie1);
-        HashMap<String, Double> movie2Vector = getMovieVector(movie2);
+    public Double dotProduct(Movie movie1, Movie movie2, String base) {
+        HashMap<String, Double> movie1Vector = getMovieVector(movie1, base);
+        HashMap<String, Double> movie2Vector = getMovieVector(movie2, base);
 
         Set<String> keySet = new HashSet<>();
         keySet.addAll(movie1Vector.keySet());
@@ -102,14 +150,34 @@ public class MovieService {
         return dotProduct;
     }
 
-    public HashMap<String, Double> getMovieVector(Movie movie) {
+    public HashMap<String, Double> getMovieVector(Movie movie, String base) {
+        if (movieVectors.get(movie.getId()) == null) {
+            movieVectors.put(movie.getId(), new HashMap<>());
+        }
+        if (movieVectors.get(movie.getId()).get(base) != null) {
+            return movieVectors.get(movie.getId()).get(base);
+        }
+
         HashMap<String, Double> movieVector = new HashMap<>();
-        for (Genre genre : movie.getGenres()) {
-            movieVector.merge(genre.getName(), MovieSuggestionService.GENRE_WEIGHT, Double::sum);
+        if (base.equals("GENRE")) {
+            for (Genre genre : movie.getGenres()) {
+                movieVector.merge(genre.getName(), 1.0, Double::sum);
+            }
+        } else if (base.equals("TAG")) {
+            for (Tag tag : tagService.getTagsByMovieId(movie.getId())) {
+                movieVector.merge(tag.getContent(), 1.0, Double::sum);
+            }
         }
-        for (Tag tag : tagService.getTagsByMovieId(movie.getId())) {
-            movieVector.merge(tag.getContent(), 1.0, Double::sum);
-        }
+
+        movieVectors.get(movie.getId()).put(base, movieVector);
         return movieVector;
     }
+
+
+    public void calculateAverageRating(Movie movie) {
+
+
+    }
+
 }
+

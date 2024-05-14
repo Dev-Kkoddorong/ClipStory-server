@@ -3,6 +3,8 @@ package com.clipstory.clipstoryserver.service;
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Member;
 import com.clipstory.clipstoryserver.domain.Movie;
+import com.clipstory.clipstoryserver.domain.Tag;
+import com.clipstory.clipstoryserver.repository.BulkRepository;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -10,17 +12,23 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.clipstory.clipstoryserver.domain.Rating;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import java.io.File;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class InitService {
 
     private final MovieService movieService;
@@ -35,6 +43,14 @@ public class InitService {
 
     private final Map<Long, Long> MovieIdToTid;
 
+    private final BulkRepository bulkRepository;
+
+    public void addData() throws IOException {
+        addMovies();
+        addRatings();
+        addTags();
+    }
+
     public void addMovies() throws IOException {
         ClassPathResource resource = new ClassPathResource("static/movies.csv");
         File moviesCsv = resource.getFile();
@@ -48,12 +64,22 @@ public class InitService {
 
         String line = null;
         br.readLine();
+        List<Movie> movieList = new ArrayList<>();
+        List<MovieGenre> movieGenreList = new ArrayList<>();
+
         while ((line = br.readLine()) != null) {
+            if (movieList.size() >= 100) {
+                bulkRepository.saveAllMovies(movieList);
+                bulkRepository.saveAllMovieGenres(movieGenreList);
+                movieList.clear();
+                movieGenreList.clear();
+            }
+
             String[] token = line.split(",");
             Long movieId = Long.parseLong(token[0]);
             String[] genre = token[token.length - 1].split("\\|");
-
             StringBuilder titleBuilder = new StringBuilder();
+
             for(int i = 1; i < token.length - 1; i++) {
                 titleBuilder.append(token[i]);
                 if(i != token.length-2) titleBuilder.append(",");
@@ -65,8 +91,19 @@ public class InitService {
                     .map(genreService::findOrCreateNew)
                     .collect(Collectors.toSet());
 
-            movieService.createMovie(movieId, tId, title, genres);
+            Movie movie = movieService.createMovie(movieId, tId, title, genres);
+
+            Iterator<Genre> iterSet = genres.iterator();
+            while(iterSet.hasNext()) {
+                Genre g = iterSet.next();
+                MovieGenre movieGenre = new MovieGenre(movieId, g.getId());
+                movieGenreList.add(movieGenre);
+            }
+
+            movieList.add(movie);
         }
+        bulkRepository.saveAllMovies(movieList);
+        bulkRepository.saveAllMovieGenres(movieGenreList);
     }
 
     public void addTags() throws IOException {
@@ -82,7 +119,13 @@ public class InitService {
 
         String line = null;
         br.readLine();
+        List<Tag> tagList = new ArrayList<>();
         while ((line = br.readLine()) != null) {
+            if (tagList.size() == 100) {
+                bulkRepository.saveAllTags(tagList);
+                tagList.clear();
+            }
+
             String[] token = line.split(",");
             String memberCustomId = token[0];
             Long movieId = Long.parseLong(token[1]);
@@ -91,19 +134,23 @@ public class InitService {
             Instant instant = Instant.ofEpochSecond(timeStamp);
             LocalDateTime createdAt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-            memberService.findOrCreateMember(memberCustomId, memberCustomId.toString());
+            memberService.findOrCreateMember(memberCustomId);
 
             Member member = memberService.findMemberByCustomId(memberCustomId);
-            Movie movie = null;
-            movie = movieService.findMovieById(movieId);
+            Movie movie = movieService.findMovieById(movieId);
+            Tag tag = tagService.createTag(member, movie, tagContent, createdAt);
+            tagList.add(tag);
+        }
+        bulkRepository.saveAllTags(tagList);
 
-
-            tagService.createTag(member, movie, tagContent, createdAt);
+        for (Tag tag : tagService.getAllTag()) {
+            Movie movie = tag.getMovie();
+            movie.addTag(tag);
         }
     }
 
     public void addRatings() throws IOException {
-        ClassPathResource resource = new ClassPathResource("static/ratings0.csv");
+        ClassPathResource resource = new ClassPathResource("static/ratings.csv");
         File moviesCsv = resource.getFile();
 
         BufferedReader br = null;
@@ -115,7 +162,12 @@ public class InitService {
 
         String line = null;
         br.readLine();
+        List<Rating> ratingList = new ArrayList<>();
         while ((line = br.readLine()) != null) {
+            if (ratingList.size() == 100) {
+                bulkRepository.saveAllRatings(ratingList);
+                ratingList.clear();
+            }
             String[] token = line.split(",");
             String memberCustomId = token[0];
             Long movieId = Long.parseLong(token[1]);
@@ -124,14 +176,43 @@ public class InitService {
             Instant instant = Instant.ofEpochSecond(timeStamp);
             LocalDateTime createdAt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-            memberService.findOrCreateMember(memberCustomId, memberCustomId.toString());
+            Member member = memberService.findOrCreateMember(memberCustomId);
+            Movie movie = movieService.findMovieById(movieId);
 
-            Member member = memberService.findMemberByCustomId(memberCustomId);
-            Movie movie = null;
-            movie = movieService.findMovieById(movieId);
+            Rating rating =  ratingService.createRating(member, movie, score, createdAt);
+            ratingList.add(rating);
 
-            ratingService.createRating(member, movie, score, createdAt);
         }
+        bulkRepository.saveAllRatings(ratingList);
+
+        for (Rating rating : ratingService.getAllRatings()) {
+            Movie movie = rating.getMovie();
+            movie.addRating(rating);
+        }
+
+        List<Movie> movieList = new ArrayList<>();
+        for (Movie movie : movieService.findAllMovies()) {
+            if (movieList.size() == 100) {
+                bulkRepository.saveAllAverageRatingRatings(movieList);
+                movieList.clear();
+            }
+            Movie updatedMovie = movie.calculateAverageRating();
+            movieList.add(updatedMovie);
+        }
+        bulkRepository.saveAllAverageRatingRatings(movieList);
+    }
+
+    public class MovieGenre {
+
+        public Long movieId;
+
+        public Long genreId;
+
+        MovieGenre(Long movieId, Long genreId) {
+            this.movieId = movieId;
+            this.genreId = genreId;
+        }
+
     }
 
 }

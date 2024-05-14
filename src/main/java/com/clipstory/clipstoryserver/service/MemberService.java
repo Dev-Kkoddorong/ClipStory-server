@@ -5,6 +5,7 @@ import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -13,25 +14,35 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
 
-    public Member findOrCreateMember(String customId, String name) {
+    private final PasswordEncoder passwordEncoder;
+
+    public Member findOrCreateMember(String customId) {
         Member member = null;
         try{
            member = findMemberByCustomId(customId);
         }catch (GeneralException e) {
-            createMember(customId,name);
+            createMember(customId,customId,customId);
             member = findMemberByCustomId(customId);
         }
         return member;
     }
 
-    public void createMember(String customId, String name) {
-        Member member = Member.toEntity(customId, name);
+    public void createMember(String customId, String name, String password) {
+        Member member = Member.toEntity(customId, name, password, passwordEncoder);
         memberRepository.save(member);
     }
 
     public Member findMemberByCustomId(String customId) {
         return memberRepository.findMemberByCustomId(customId)
                 .orElseThrow(() -> new GeneralException(Status.MEMBER_NOT_FOUND));
+    }
+
+    public void save(Member member){
+        memberRepository.save(member);
+    }
+
+    public boolean isMemberExist(String customId) {
+        return memberRepository.existsByCustomId(customId);
     }
 
 }

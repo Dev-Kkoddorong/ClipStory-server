@@ -21,9 +21,8 @@ public class TagService {
 
     private final TagRepository tagRepository;
 
-    public void createTag(Member member, Movie movie, String content, LocalDateTime createdAt) {
-        Tag tag = Tag.toEntity(member, movie, content, createdAt);
-        tagRepository.save(tag);
+    public Tag createTag(Member member, Movie movie, String content, LocalDateTime createdAt) {
+        return Tag.toEntity(member, movie, content, createdAt);
     }
 
     public TagResponseDto getTag(Long tagId) {
@@ -39,6 +38,10 @@ public class TagService {
     public PagedResponseDto<TagResponseDto> getAllTag(Pageable pageable) {
         Page<Tag> tags = tagRepository.findAll(pageable);
         return new PagedResponseDto<>(tags.map(tag -> TagResponseDto.toResponseDto(tag)));
+    }
+
+    public List<Tag> getAllTag() {
+        return tagRepository.findAll();
     }
 
     public List<Tag> getTagsByMovieId(Long movieId) {

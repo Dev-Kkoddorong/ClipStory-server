@@ -31,7 +31,14 @@ public class MovieResponseDto {
 
     private Double averageRating;
 
-    public static MovieResponseDto toMovieResponseDto(Movie movie, Double averageRating, List<Tag> tagList) {
+    private String imageUrl;
+
+    private Boolean isAdult;
+
+    private String overView;
+
+    public static MovieResponseDto toMovieResponseDto(Movie movie, Double averageRating, List<Tag> tagList, MovieExtraInformationResponseDto movieExtraInformationResponseDto) {
+
         return MovieResponseDto.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
@@ -39,7 +46,11 @@ public class MovieResponseDto {
                 .genreNameList(movie.getGenres().stream().map(genre -> genre.getName()).collect(Collectors.toSet()))
                 .tagList(tagList.stream().map(tag -> tag.getContent()).collect(Collectors.toList()))
                 .averageRating(averageRating)
+                .imageUrl(movieExtraInformationResponseDto.getPoster_path())
+                .isAdult(movieExtraInformationResponseDto.isAdult())
+                .overView(movieExtraInformationResponseDto.getOverview())
                 .build();
+
     }
 
 }
