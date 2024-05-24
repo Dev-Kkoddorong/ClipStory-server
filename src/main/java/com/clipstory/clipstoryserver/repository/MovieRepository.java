@@ -17,4 +17,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m WHERE m.title LIKE %:keyword%")
     Page<Movie> findByTitleContainingKeyword(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("SELECT m FROM Movie m JOIN m.genres g WHERE g.name = :genreName")
+    Page<Movie> findByGenreName(String genreName, Pageable pageable);
+
 }

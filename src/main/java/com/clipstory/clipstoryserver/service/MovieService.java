@@ -81,6 +81,14 @@ public class MovieService {
                         addMovieInformation(movie))));
     }
 
+    public PagedResponseDto<MovieResponseDto> getMovieByGenre(String genreName, Pageable pageable) {
+        Page<Movie> movies = movieRepository.findByGenreName(genreName, pageable);
+        return new PagedResponseDto<>(movies.
+                map(movie ->  MovieResponseDto.toMovieResponseDto(
+                        movie, movie.getAverageRating(),
+                        tagService.getTagsByMovieId(movie.getId()),
+                        addMovieInformation(movie))));
+    }
 
     public Movie findMovieById(Long id) {
         return movieRepository.findById(id)
