@@ -41,11 +41,11 @@ public class Movie {
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "movie")
     @JsonBackReference
-    public List<Rating> ratings;
+    private List<Rating> ratings;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "movie")
     @JsonBackReference
-    public List<Tag> tags;
+    private List<Tag> tags;
 
     public static Movie toEntity(Long id, Long tId, String title, Set<Genre> genres) {
         return Movie.builder()

@@ -47,8 +47,8 @@ public class InitService {
 
     public void addData() throws IOException {
         addMovies();
-        addRatings();
         addTags();
+        addRatings();
     }
 
     public void addMovies() throws IOException {
@@ -146,6 +146,9 @@ public class InitService {
         for (Tag tag : tagService.getAllTag()) {
             Movie movie = tag.getMovie();
             movie.addTag(tag);
+
+            Member member = tag.getMember();
+            member.addTag(tag);
         }
     }
 
@@ -188,6 +191,9 @@ public class InitService {
         for (Rating rating : ratingService.getAllRatings()) {
             Movie movie = rating.getMovie();
             movie.addRating(rating);
+
+            Member member = rating.getMember();
+            member.addRating(rating);
         }
 
         List<Movie> movieList = new ArrayList<>();

@@ -31,4 +31,14 @@ public class MovieSuggestionController {
         return ApiResponse.onSuccess(Status.OK.getCode(), Status.OK.getMessage(), movieResponseDtos);
     }
 
+    @Operation(summary = "취향이 비슷한 사람의 추천 영화")
+    @Secured({"ROLE_USER"})
+    @PostMapping("/similarPeoplesMovie")
+    public ApiResponse<List<MovieResponseDto>> getSimilarPeoplesMovies(
+            @RequestBody MovieSuggestionRequestDto movieSuggestionRequestDto
+    ) {
+        List<MovieResponseDto> movieResponseDtos = movieSuggestionService.getSimilarPeoplesMovies(movieSuggestionRequestDto);
+        return ApiResponse.onSuccess(Status.OK.getCode(), Status.OK.getMessage(), movieResponseDtos);
+    }
+
 }
