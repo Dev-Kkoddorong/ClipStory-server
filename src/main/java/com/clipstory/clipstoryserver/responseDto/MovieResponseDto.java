@@ -5,6 +5,7 @@ import com.clipstory.clipstoryserver.domain.Movie;
 import com.clipstory.clipstoryserver.domain.Tag;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,7 +38,8 @@ public class MovieResponseDto {
 
     private String overView;
 
-    public static MovieResponseDto toMovieResponseDto(Movie movie, Double averageRating, List<Tag> tagList, MovieExtraInformationResponseDto movieExtraInformationResponseDto) {
+    public static MovieResponseDto toMovieResponseDto(Movie movie, Double averageRating, List<Tag> tagList, CompletableFuture<MovieExtraInformationResponseDto> movieExtraInformationResponseDtoFuture) {
+        MovieExtraInformationResponseDto movieExtraInformationResponseDto = movieExtraInformationResponseDtoFuture != null ? movieExtraInformationResponseDtoFuture.join() : null;
 
         return MovieResponseDto.builder()
                 .id(movie.getId())

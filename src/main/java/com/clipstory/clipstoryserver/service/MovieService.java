@@ -2,7 +2,6 @@ package com.clipstory.clipstoryserver.service;
 
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
-import com.clipstory.clipstoryserver.domain.Rating;
 import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
@@ -11,13 +10,17 @@ import com.clipstory.clipstoryserver.responseDto.MovieExtraInformationResponseDt
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
 import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 
+import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -56,12 +59,27 @@ public class MovieService {
     }
 
     public PagedResponseDto<MovieResponseDto> getMovies(Pageable pageable) {
+        log.info(LocalTime.now().toString());
         Page<Movie> movies = movieRepository.findAll(pageable);
-        return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(
+        log.info(LocalTime.now().toString());
+
+
+        Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
+                .map(movie -> CompletableFuture.supplyAsync(() ->
+                        MovieResponseDto.toMovieResponseDto(
                         movie, movie.getAverageRating(),
                         tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))));
+                        addMovieInformation(movie))
+                ));
+        log.info(LocalTime.now().toString());
+
+
+        List<MovieResponseDto> movieResponseDtos = futures
+                .map(CompletableFuture::join)
+                .toList();
+
+        log.info(LocalTime.now().toString());
+        return new PagedResponseDto<>(movieResponseDtos, movies.getNumber(), movies.getSize(), movies.getTotalElements(), movies.getTotalPages(), movies.isLast());
     }
 
     public MovieResponseDto getMovie(Long movieId) {
@@ -103,18 +121,19 @@ public class MovieService {
         return movieRepository.findAll();
     }
 
-    public MovieExtraInformationResponseDto addMovieInformation(Movie movie) {
+    @Async
+    public CompletableFuture<MovieExtraInformationResponseDto> addMovieInformation(Movie movie) {
         Long tid = movie.getTId();
         if (tid == null)
-            return null;
+            return CompletableFuture.completedFuture(null);
         RestTemplate restTemplate = new RestTemplate();
         try{
             MovieExtraInformationResponseDto movieExtraInformationResponseDto = restTemplate.getForObject(BASE_URL + tid +
                     "?api_key=" + apiKey + LANGUAGE_FORMAT, MovieExtraInformationResponseDto.class);
             movieExtraInformationResponseDto.setPoster_path(IMAGE_BASE_URL + movieExtraInformationResponseDto.getPoster_path());
-            return movieExtraInformationResponseDto;
+            return CompletableFuture.completedFuture(movieExtraInformationResponseDto);
         }catch (HttpClientErrorException ex) {
-            return null;
+            return CompletableFuture.completedFuture(null);
         }
     }
 
