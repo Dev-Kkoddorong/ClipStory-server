@@ -46,9 +46,9 @@ public class MovieResponseDto {
                 .genreNameList(movie.getGenres().stream().map(genre -> genre.getName()).collect(Collectors.toSet()))
                 .tagList(tagList.stream().map(tag -> tag.getContent()).collect(Collectors.toList()))
                 .averageRating(averageRating)
-                .imageUrl(movieExtraInformationResponseDto.getPoster_path())
-                .isAdult(movieExtraInformationResponseDto.isAdult())
-                .overView(movieExtraInformationResponseDto.getOverview())
+                .imageUrl(movieExtraInformationResponseDto != null ? movieExtraInformationResponseDto.getPoster_path() : null)
+                .isAdult(movieExtraInformationResponseDto != null ? movieExtraInformationResponseDto.isAdult() : null)
+                .overView(movieExtraInformationResponseDto != null ? movieExtraInformationResponseDto.getOverview() : null)
                 .build();
 
     }

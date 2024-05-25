@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -57,16 +59,15 @@ public class Member implements UserDetails {
     }
 
     public Movie getBestMovie() {
-        Movie movie = null;
-        Double score = 0.0;
+        AtomicReference<Rating> maxRating = new AtomicReference<>(null);
 
-        for (Rating rating : ratingList) {
-            if (rating.getScore() > score) {
-                score = rating.getScore();
-                movie = rating.getMovie();
+        ratingList.parallelStream().forEach(rating -> {
+            if (maxRating.get() == null || rating.getScore() > maxRating.get().getScore()) {
+                maxRating.set(rating);
             }
-        }
-        return movie;
+        });
+
+        return maxRating.get().getMovie();
     }
 
     public Member(String customId, String password, Role role) {

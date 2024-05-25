@@ -8,10 +8,14 @@ import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
 import com.clipstory.clipstoryserver.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
 @RequiredArgsConstructor
 @Service
@@ -83,21 +87,33 @@ public class MemberService {
         return memberPos;
     }
 
+    @Transactional(readOnly = true)
     public List<Double> getMemberPos(Long memberId) {
         if (memberPoses.get(memberId) != null) {
             return memberPoses.get(memberId);
         }
 
         Member member = findById(memberId);
+
+        // 필요한 데이터 미리 로드
+        Hibernate.initialize(member.getRatingList());
+        member.getRatingList().forEach(rating -> {
+            Hibernate.initialize(rating.getMovie());
+            Hibernate.initialize(rating.getMovie().getGenres());
+        });
+
         List<Double> moviePos = new ArrayList<>(Collections.nCopies((int)genreService.genreSize(), 0.0));
 
-        for (Rating rating : member.getRatingList()) {
+        Map<Integer, Double> genreScoreMap = new ConcurrentHashMap<>();
+        member.getRatingList().parallelStream().forEach(rating -> {
             Movie movie = rating.getMovie();
-            for (Genre genre : movie.getGenres()) {
-                int idx =  genre.getId().intValue() - 1;
-                moviePos.set(idx, moviePos.get(idx) + (rating.getScore() - 3.0));
-            }
-        }
+            movie.getGenres().parallelStream().forEach(genre -> {
+                int idx = genre.getId().intValue() - 1;
+                genreScoreMap.merge(idx, rating.getScore() - 3.0, Double::sum);
+            });
+        });
+
+        genreScoreMap.forEach((idx, score) -> moviePos.set(idx, score));
 
         normalizeMemberPos(moviePos);
 
@@ -106,17 +122,23 @@ public class MemberService {
     }
 
     private void normalizeMemberPos(List<Double> memberPos) {
-        double maxValue = 0.0;
-        for (int i = 0; i < genreService.genreSize(); i++) {
-            maxValue = Math.max(maxValue, Math.abs(memberPos.get(i)));
-        }
+        int genreSize = (int)genreService.genreSize();
+
+        // 병렬 스트림을 사용하여 maxValue 계산
+        double maxValue = IntStream.range(0, genreSize)
+                .parallel()
+                .mapToDouble(i -> Math.abs(memberPos.get(i)))
+                .max()
+                .orElse(0.0);
+
         if (maxValue == 0.0) {
             return;
         }
 
-        for (int i = 0; i < genreService.genreSize(); i++) {
-            memberPos.set(i, memberPos.get(i) / maxValue);
-        }
+        // 병렬 스트림을 사용하여 정규화
+        IntStream.range(0, genreSize)
+                .parallel()
+                .forEach(i -> memberPos.set(i, memberPos.get(i) / maxValue));
     }
 
 }

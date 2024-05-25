@@ -12,10 +12,13 @@ import com.clipstory.clipstoryserver.service.TagService;
 import jakarta.websocket.OnError;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @AllArgsConstructor
@@ -154,23 +157,39 @@ public class MovieSuggestionService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<MemberDist> getMemberDists(List<Double> pos) {
-        List<MemberDist> memberDists = new ArrayList<>();
+        List<Member> members = memberService.findAllMember();
 
-        for (Member member : memberService.findAllMember()) {
-            List<Double> memberPos = memberService.getMemberPos(member.getId());
-            memberDists.add(new MemberDist(getMemberDist(pos,memberPos),member.getId()));
-        }
+        members.forEach(member -> {
+            Hibernate.initialize(member.getRatingList());
+            member.getRatingList().forEach(rating -> {
+                Hibernate.initialize(rating.getMovie());
+                Hibernate.initialize(rating.getMovie().getGenres());
+            });
+        });
 
-        return memberDists;
+        return members.parallelStream()
+                .map(member -> {
+                    List<Double> memberPos = memberService.getMemberPos(member.getId());
+                    return new MemberDist(getMemberDist(pos, memberPos), member.getId());
+                })
+                .collect(Collectors.toList());
     }
 
+
     public Double getMemberDist(List<Double> pos1, List<Double> pos2) {
-        double dist = 0.0;
-        for (int i = 0; i < genreService.genreSize(); i++) {
-            double delta = pos1.get(i) - pos2.get(i);
-            dist += delta * delta;
-        }
+        int genreSize = (int)genreService.genreSize();
+
+        // 병렬 스트림을 사용하여 거리 계산
+        double dist = IntStream.range(0, genreSize)
+                .parallel()
+                .mapToDouble(i -> {
+                    double delta = pos1.get(i) - pos2.get(i);
+                    return delta * delta;
+                })
+                .sum();
+
         return Math.sqrt(dist);
     }
 
