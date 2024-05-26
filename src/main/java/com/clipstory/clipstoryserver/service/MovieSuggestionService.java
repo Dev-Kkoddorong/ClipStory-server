@@ -62,17 +62,12 @@ public class MovieSuggestionService {
         Set<Movie> similarMovies = getSimilarMovies(likeMovies);
         similarMovies.removeAll(getSimilarMovies(hateMovies));
 
-        return similarMovies.stream().sorted(Comparator.comparingDouble(
-                Movie::getAverageRating).reversed()).toList()
-                .subList(0, Math.min(SUGGESTION_MOVIE_SIZE, similarMovies.size()))
-                .stream()
-                .map(movie ->
-                        MovieResponseDto.toMovieResponseDto(
-                                movie, movie.getAverageRating(),
-                                movie.getTags(),
-                                movieService.addMovieInformation(movie))
-                        )
-                .toList();
+        return movieService.getMovies(
+                similarMovies.stream()
+                        .sorted(Comparator.comparingDouble(Movie::getAverageRating).reversed())
+                        .toList()
+                        .subList(0, Math.min(SUGGESTION_MOVIE_SIZE, similarMovies.size()))
+        );
     }
 
     public Set<Movie> getSimilarMovies(List<Movie> movies) {
@@ -149,14 +144,7 @@ public class MovieSuggestionService {
             idx++;
         }
 
-        return similarPeoplesMovies.stream()
-                .map(movie ->
-                        MovieResponseDto.toMovieResponseDto(
-                                movie, movie.getAverageRating(),
-                                movie.getTags(),
-                                movieService.addMovieInformation(movie))
-                )
-                .toList();
+        return movieService.getMovies(similarPeoplesMovies.stream().toList());
     }
 
     @Transactional(readOnly = true)
@@ -183,7 +171,6 @@ public class MovieSuggestionService {
     public Double getMemberDist(List<Double> pos1, List<Double> pos2) {
         int genreSize = (int)genreService.genreSize();
 
-        // 병렬 스트림을 사용하여 거리 계산
         double dist = IntStream.range(0, genreSize)
                 .parallel()
                 .mapToDouble(i -> {

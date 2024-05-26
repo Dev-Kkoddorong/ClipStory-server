@@ -59,27 +59,21 @@ public class MovieService {
     }
 
     public PagedResponseDto<MovieResponseDto> getMovies(Pageable pageable) {
-        log.info(LocalTime.now().toString());
         Page<Movie> movies = movieRepository.findAll(pageable);
-        log.info(LocalTime.now().toString());
+        return getPagedMovieResponseDto(movies);
+    }
 
-
+    public List<MovieResponseDto> getMovies(List<Movie> movies) {
         Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
                 .map(movie -> CompletableFuture.supplyAsync(() ->
                         MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))
+                                movie, movie.getAverageRating(),
+                                tagService.getTagsByMovieId(movie.getId()),
+                                addMovieInformation(movie)
+                        )
                 ));
-        log.info(LocalTime.now().toString());
 
-
-        List<MovieResponseDto> movieResponseDtos = futures
-                .map(CompletableFuture::join)
-                .toList();
-
-        log.info(LocalTime.now().toString());
-        return new PagedResponseDto<>(movieResponseDtos, movies.getNumber(), movies.getSize(), movies.getTotalElements(), movies.getTotalPages(), movies.isLast());
+        return futures.map(CompletableFuture::join).toList();
     }
 
     public MovieResponseDto getMovie(Long movieId) {
@@ -92,20 +86,29 @@ public class MovieService {
 
     public PagedResponseDto<MovieResponseDto> getMovieByPartOfTitle(String partOfTitle, Pageable pageable) {
         Page<Movie> movies = movieRepository.findByTitleContainingKeyword(partOfTitle, pageable);
-        return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))));
+        return getPagedMovieResponseDto(movies);
     }
 
     public PagedResponseDto<MovieResponseDto> getMovieByGenre(String genreName, Pageable pageable) {
         Page<Movie> movies = movieRepository.findByGenreName(genreName, pageable);
-        return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))));
+        return getPagedMovieResponseDto(movies);
+    }
+
+    public PagedResponseDto<MovieResponseDto> getPagedMovieResponseDto(Page<Movie> movies) {
+        Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
+                .map(movie -> CompletableFuture.supplyAsync(() ->
+                        MovieResponseDto.toMovieResponseDto(
+                                movie, movie.getAverageRating(),
+                                tagService.getTagsByMovieId(movie.getId()),
+                                addMovieInformation(movie)
+                        )
+                ));
+
+        List<MovieResponseDto> movieResponseDtos = futures
+                .map(CompletableFuture::join)
+                .toList();
+
+        return new PagedResponseDto<>(movieResponseDtos, movies.getNumber(), movies.getSize(), movies.getTotalElements(), movies.getTotalPages(), movies.isLast());
     }
 
     public Movie findMovieById(Long id) {
