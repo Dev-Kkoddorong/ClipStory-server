@@ -34,7 +34,7 @@ public class Movie {
 
     private Long tId;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     private Set<Genre> genres;
 
     private Double averageRating;

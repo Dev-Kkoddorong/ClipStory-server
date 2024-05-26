@@ -12,12 +12,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.annotation.Transactional;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
+@Slf4j
 public class MovieResponseDto {
 
     private Long id;
@@ -38,21 +42,18 @@ public class MovieResponseDto {
 
     private String overView;
 
-    public static MovieResponseDto toMovieResponseDto(Movie movie, Double averageRating, List<Tag> tagList, CompletableFuture<MovieExtraInformationResponseDto> movieExtraInformationResponseDtoFuture) {
-        MovieExtraInformationResponseDto movieExtraInformationResponseDto = movieExtraInformationResponseDtoFuture != null ? movieExtraInformationResponseDtoFuture.join() : null;
-
+    public static MovieResponseDto toMovieResponseDto(Movie movie, MovieExtraInformationResponseDto movieExtraInformationResponseDto) {
         return MovieResponseDto.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
                 .tId(movie.getTId())
-                .genreNameList(movie.getGenres().stream().map(genre -> genre.getName()).collect(Collectors.toSet()))
-                .tagList(tagList.stream().map(tag -> tag.getContent()).collect(Collectors.toList()))
-                .averageRating(averageRating)
+                .genreNameList(movie.getGenres().stream().map(Genre::getName).collect(Collectors.toSet()))
+                .tagList( movie.getTags().stream().map(Tag::getContent).collect(Collectors.toList()))
+                .averageRating(movie.getAverageRating())
                 .imageUrl(movieExtraInformationResponseDto != null ? movieExtraInformationResponseDto.getPoster_path() : null)
                 .isAdult(movieExtraInformationResponseDto != null ? movieExtraInformationResponseDto.isAdult() : null)
                 .overView(movieExtraInformationResponseDto != null ? movieExtraInformationResponseDto.getOverview() : null)
                 .build();
-
     }
 
 }
