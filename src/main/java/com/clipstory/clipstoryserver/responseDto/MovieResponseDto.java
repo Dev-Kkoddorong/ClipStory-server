@@ -42,7 +42,8 @@ public class MovieResponseDto {
 
     private String overView;
 
-    public static MovieResponseDto toMovieResponseDto(Movie movie, MovieExtraInformationResponseDto movieExtraInformationResponseDto) {
+    public static MovieResponseDto toMovieResponseDto(Movie movie, CompletableFuture<MovieExtraInformationResponseDto> movieExtraInformationResponseDtoFuture) {
+        MovieExtraInformationResponseDto movieExtraInformationResponseDto = movieExtraInformationResponseDtoFuture == null ? null : movieExtraInformationResponseDtoFuture.join();
         return MovieResponseDto.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())

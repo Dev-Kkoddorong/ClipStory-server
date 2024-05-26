@@ -66,8 +66,17 @@ public class MovieService {
 
     @Transactional
     public List<MovieResponseDto> getMovies(List<Movie> movies) {
-        return movies.parallelStream()
-                .map(movie -> getMovie(movie.getId()))
+        Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
+                .map(movie -> CompletableFuture.supplyAsync(() ->
+                        MovieResponseDto.toMovieResponseDto(
+                                movie,
+                                addMovieInformation(movie)
+                        )
+                ));
+
+        return futures
+                .parallel()
+                .map(CompletableFuture::join)
                 .toList();
     }
 
@@ -89,10 +98,18 @@ public class MovieService {
     }
 
     public PagedResponseDto<MovieResponseDto> getPagedMovieResponseDto(Page<Movie> movies) {
-        List<MovieResponseDto> movieResponseDtos = movies.stream()
+        Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
+                .map(movie -> CompletableFuture.supplyAsync(() ->
+                        MovieResponseDto.toMovieResponseDto(
+                                movie,
+                                addMovieInformation(movie)
+                        )
+                ));
+
+        List<MovieResponseDto> movieResponseDtos = futures
                 .parallel()
-                .map(movie -> getMovie(movie.getId())
-                ).collect(Collectors.toList());
+                .map(CompletableFuture::join)
+                .toList();
 
         return new PagedResponseDto<>(movieResponseDtos, movies.getNumber(), movies.getSize(), movies.getTotalElements(), movies.getTotalPages(), movies.isLast());
     }
@@ -110,7 +127,8 @@ public class MovieService {
         return movieRepository.findAll();
     }
 
-    public MovieExtraInformationResponseDto addMovieInformation(Movie movie) {
+    @Async
+    public CompletableFuture<MovieExtraInformationResponseDto> addMovieInformation(Movie movie) {
         Long tid = movie.getTId();
         if (tid == null)
             return null;
@@ -119,7 +137,7 @@ public class MovieService {
             MovieExtraInformationResponseDto movieExtraInformationResponseDto = restTemplate.getForObject(BASE_URL + tid +
                     "?api_key=" + apiKey + LANGUAGE_FORMAT, MovieExtraInformationResponseDto.class);
             movieExtraInformationResponseDto.setPoster_path(IMAGE_BASE_URL + movieExtraInformationResponseDto.getPoster_path());
-            return movieExtraInformationResponseDto;
+            return CompletableFuture.completedFuture(movieExtraInformationResponseDto);
         } catch (HttpClientErrorException ex) {
             return null;
         }
