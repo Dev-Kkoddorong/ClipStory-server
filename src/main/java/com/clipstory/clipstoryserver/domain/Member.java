@@ -4,6 +4,7 @@ import com.clipstory.clipstoryserver.requestDto.MemberRequestDto;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,10 +32,13 @@ public class Member implements UserDetails {
     private Long id;
 
     @Column(unique = true)
+    @NotNull
     private String customId;
 
+    @NotNull
     private String password;
 
+    @NotNull
     private String name;
 
     @Enumerated(EnumType.STRING)
