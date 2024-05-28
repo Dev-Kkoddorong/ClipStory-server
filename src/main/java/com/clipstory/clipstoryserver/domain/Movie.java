@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.ManyToMany;
 
 
+import jakarta.validation.constraints.NotNull;
 import java.sql.Wrapper;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ public class Movie {
     @Id
     private Long id;
 
+    @NotNull
     private String title;
 
     private Long tId;
