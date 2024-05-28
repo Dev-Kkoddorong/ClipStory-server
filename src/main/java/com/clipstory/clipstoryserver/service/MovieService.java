@@ -98,16 +98,16 @@ public class MovieService {
     }
 
     public PagedResponseDto<MovieResponseDto> getPagedMovieResponseDto(Page<Movie> movies) {
-        Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
+        List<CompletableFuture<MovieResponseDto>> futures = movies
                 .map(movie -> CompletableFuture.supplyAsync(() ->
                         MovieResponseDto.toMovieResponseDto(
                                 movie,
                                 addMovieInformation(movie)
                         )
-                ));
+                )).toList();
 
         List<MovieResponseDto> movieResponseDtos = futures
-                .parallel()
+                .parallelStream()
                 .map(CompletableFuture::join)
                 .toList();
 
