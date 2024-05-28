@@ -27,4 +27,7 @@ public class GenreService {
                 .collect(Collectors.toList());
     }
 
+    public long genreSize() {
+        return genreRepository.count();
+    }
 }

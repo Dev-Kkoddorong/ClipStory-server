@@ -1,17 +1,15 @@
 package com.clipstory.clipstoryserver.domain;
 
 import com.clipstory.clipstoryserver.requestDto.MemberRequestDto;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,18 +40,34 @@ public class Member implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @OneToMany(mappedBy = "member")
-    private List<Tag> tagList;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "member")
+    @JsonBackReference
+    @Builder.Default
+    private List<Tag> tagList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "member")
-    private List<Rating> ratingList;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "member")
+    @JsonBackReference
+    @Builder.Default
+    private List<Rating> ratingList = new ArrayList<>();
 
     public void addTag(Tag tag) {
-        this.tagList.add(tag);
+        tagList.add(tag);
     }
 
     public void addRating(Rating rating) {
-        this.ratingList.add(rating);
+        ratingList.add(rating);
+    }
+
+    public Movie getBestMovie() {
+        AtomicReference<Rating> maxRating = new AtomicReference<>(null);
+
+        ratingList.parallelStream().forEach(rating -> {
+            if (maxRating.get() == null || rating.getScore() > maxRating.get().getScore()) {
+                maxRating.set(rating);
+            }
+        });
+
+        return maxRating.get().getMovie();
     }
 
     public Member(String customId, String password, Role role) {

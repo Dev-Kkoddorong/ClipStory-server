@@ -1,5 +1,6 @@
 package com.clipstory.clipstoryserver.controller;
 
+import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
 import com.clipstory.clipstoryserver.global.response.ApiResponse;
 import com.clipstory.clipstoryserver.global.response.Status;
@@ -58,6 +59,19 @@ public class MovieController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         PagedResponseDto<MovieResponseDto> pagedMovieList = movieService.getMovieByPartOfTitle(partOfTitle, pageable);
+        return ApiResponse.onSuccess(Status.OK.getCode(),
+                Status.OK.getMessage(), pagedMovieList);
+    }
+
+    @GetMapping("/genre")
+    @Operation(summary = "장르로 영화 조회")
+    public ApiResponse<?> getMovieByGenre(
+            @RequestParam(name = "genreName") String genreName ,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        PagedResponseDto<MovieResponseDto> pagedMovieList = movieService.getMovieByGenre(genreName, pageable);
         return ApiResponse.onSuccess(Status.OK.getCode(),
                 Status.OK.getMessage(), pagedMovieList);
     }

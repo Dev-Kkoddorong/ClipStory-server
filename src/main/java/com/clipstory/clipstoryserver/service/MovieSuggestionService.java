@@ -1,18 +1,25 @@
 package com.clipstory.clipstoryserver.service;
 
+import com.clipstory.clipstoryserver.domain.Member;
 import com.clipstory.clipstoryserver.domain.Movie;
+import com.clipstory.clipstoryserver.global.response.ApiResponse;
 import com.clipstory.clipstoryserver.repository.MovieRepository;
 import com.clipstory.clipstoryserver.requestDto.MovieSuggestionRequestDto;
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
 import com.clipstory.clipstoryserver.service.MovieService;
 import com.clipstory.clipstoryserver.service.RatingService;
 import com.clipstory.clipstoryserver.service.TagService;
+import jakarta.websocket.OnError;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @AllArgsConstructor
@@ -24,6 +31,10 @@ public class MovieSuggestionService {
     private final RatingService ratingService;
 
     private final TagService tagService;
+
+    private final MemberService memberService;
+
+    private final GenreService genreService;
 
 
     private static final int LIKE_MOVIE_SIZE = 3;
@@ -51,17 +62,12 @@ public class MovieSuggestionService {
         Set<Movie> similarMovies = getSimilarMovies(likeMovies);
         similarMovies.removeAll(getSimilarMovies(hateMovies));
 
-        return similarMovies.stream()
-                .map(movie ->
-                        MovieResponseDto.toMovieResponseDto(
-                                movie, movie.getAverageRating(),
-                                tagService.getTagsByMovieId(movie.getId()),
-                                movieService.addMovieInformation(movie))
-                    )
-                .sorted(Comparator.comparingDouble(
-                        MovieResponseDto::getAverageRating
-                        ).reversed()).toList()
-                .subList(0, Math.min(SUGGESTION_MOVIE_SIZE, similarMovies.size()));
+        return movieService.getMovies(
+                similarMovies.stream()
+                        .sorted(Comparator.comparingDouble(Movie::getAverageRating).reversed())
+                        .toList()
+                        .subList(0, Math.min(SUGGESTION_MOVIE_SIZE, similarMovies.size()))
+        );
     }
 
     public Set<Movie> getSimilarMovies(List<Movie> movies) {
@@ -112,6 +118,89 @@ public class MovieSuggestionService {
 
         Double similarity = (m1 == 0.0 || m2 == 0.0 ? 0.0 : (d / (m1 * m2)));
         return similarity;
+    }
+
+    public List<MovieResponseDto> getSimilarPeoplesMovies(MovieSuggestionRequestDto movieSuggestionRequestDto) {
+        List<Movie> likeMovies = movieSuggestionRequestDto.getLikeMovieIdList()
+                .stream()
+                .map(movieService::findMovieById)
+                .toList();
+        List<Movie> hateMovies = movieSuggestionRequestDto.getHateMovieIdList()
+                .stream()
+                .map(movieService::findMovieById)
+                .toList();
+
+        List<Double> myPos = memberService.getMemberPos(likeMovies, hateMovies);
+        List<MemberDist> memberDists = getMemberDists(myPos);
+
+        Collections.sort(memberDists);
+
+        Set<Movie> similarPeoplesMovies = new HashSet<>();
+        int idx = 0;
+        while (similarPeoplesMovies.size() < SUGGESTION_MOVIE_SIZE) {
+            Member member = memberService.findById(memberDists.get(idx).memberId);
+            Movie movie = member.getBestMovie();
+            similarPeoplesMovies.add(movie);
+            idx++;
+        }
+
+        return movieService.getMovies(similarPeoplesMovies.stream().toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<MemberDist> getMemberDists(List<Double> pos) {
+        List<Member> members = memberService.findAllMember();
+
+        members.forEach(member -> {
+            Hibernate.initialize(member.getRatingList());
+            member.getRatingList().forEach(rating -> {
+                Hibernate.initialize(rating.getMovie());
+                Hibernate.initialize(rating.getMovie().getGenres());
+            });
+        });
+
+        return members.parallelStream()
+                .map(member -> {
+                    List<Double> memberPos = memberService.getMemberPos(member.getId());
+                    return new MemberDist(getMemberDist(pos, memberPos), member.getId());
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    public Double getMemberDist(List<Double> pos1, List<Double> pos2) {
+        int genreSize = (int)genreService.genreSize();
+
+        double dist = IntStream.range(0, genreSize)
+                .parallel()
+                .mapToDouble(i -> {
+                    double delta = pos1.get(i) - pos2.get(i);
+                    return delta * delta;
+                })
+                .sum();
+
+        return Math.sqrt(dist);
+    }
+
+    class MemberDist implements Comparable<MemberDist> {
+        Double dist;
+
+        Long memberId;
+
+        MemberDist(Double dist, Long memberId) {
+            this.dist = dist;
+            this.memberId = memberId;
+        }
+
+        @Override
+        public int compareTo(MemberDist other) {
+            int distComp = this.dist.compareTo(other.dist);
+            if (distComp != 0) {
+                return distComp;
+            }
+            return this.memberId.compareTo(other.memberId);
+        }
+
     }
 
 }
