@@ -95,7 +95,6 @@ public class MemberService {
 
         Member member = findById(memberId);
 
-        // 필요한 데이터 미리 로드
         Hibernate.initialize(member.getRatingList());
         member.getRatingList().forEach(rating -> {
             Hibernate.initialize(rating.getMovie());
@@ -124,7 +123,6 @@ public class MemberService {
     private void normalizeMemberPos(List<Double> memberPos) {
         int genreSize = (int)genreService.genreSize();
 
-        // 병렬 스트림을 사용하여 maxValue 계산
         double maxValue = IntStream.range(0, genreSize)
                 .parallel()
                 .mapToDouble(i -> Math.abs(memberPos.get(i)))
@@ -135,7 +133,6 @@ public class MemberService {
             return;
         }
 
-        // 병렬 스트림을 사용하여 정규화
         IntStream.range(0, genreSize)
                 .parallel()
                 .forEach(i -> memberPos.set(i, memberPos.get(i) / maxValue));

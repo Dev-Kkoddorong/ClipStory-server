@@ -2,7 +2,6 @@ package com.clipstory.clipstoryserver.service;
 
 import com.clipstory.clipstoryserver.domain.Genre;
 import com.clipstory.clipstoryserver.domain.Movie;
-import com.clipstory.clipstoryserver.domain.Rating;
 import com.clipstory.clipstoryserver.domain.Tag;
 import com.clipstory.clipstoryserver.global.response.GeneralException;
 import com.clipstory.clipstoryserver.global.response.Status;
@@ -11,14 +10,20 @@ import com.clipstory.clipstoryserver.responseDto.MovieExtraInformationResponseDt
 import com.clipstory.clipstoryserver.responseDto.MovieResponseDto;
 import com.clipstory.clipstoryserver.responseDto.PagedResponseDto;
 
+import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -47,7 +52,6 @@ public class MovieService {
     private final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200";
 
     public Movie createMovie(Long movieId, Long tId, String title, Set<Genre> genres) {
-        //log.info("createMovie에서" + movieId);
         return Movie.toEntity(movieId, tId, title, genres);
     }
 
@@ -57,37 +61,57 @@ public class MovieService {
 
     public PagedResponseDto<MovieResponseDto> getMovies(Pageable pageable) {
         Page<Movie> movies = movieRepository.findAll(pageable);
-        return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))));
+        return getPagedMovieResponseDto(movies);
+    }
+
+    @Transactional
+    public List<MovieResponseDto> getMovies(List<Movie> movies) {
+        Stream<CompletableFuture<MovieResponseDto>> futures = movies.stream()
+                .map(movie -> CompletableFuture.supplyAsync(() ->
+                        MovieResponseDto.toMovieResponseDto(
+                                movie,
+                                addMovieInformation(movie)
+                        )
+                ));
+
+        return futures
+                .parallel()
+                .map(CompletableFuture::join)
+                .toList();
     }
 
     public MovieResponseDto getMovie(Long movieId) {
         Movie movie = findMovieById(movieId);
         return MovieResponseDto.toMovieResponseDto(
-                movie, movie.getAverageRating(),
-                tagService.getTagsByMovieId(movie.getId()),
+                movie,
                 addMovieInformation(movie));
     }
 
     public PagedResponseDto<MovieResponseDto> getMovieByPartOfTitle(String partOfTitle, Pageable pageable) {
         Page<Movie> movies = movieRepository.findByTitleContainingKeyword(partOfTitle, pageable);
-        return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))));
+        return getPagedMovieResponseDto(movies);
     }
 
     public PagedResponseDto<MovieResponseDto> getMovieByGenre(String genreName, Pageable pageable) {
         Page<Movie> movies = movieRepository.findByGenreName(genreName, pageable);
-        return new PagedResponseDto<>(movies.
-                map(movie ->  MovieResponseDto.toMovieResponseDto(
-                        movie, movie.getAverageRating(),
-                        tagService.getTagsByMovieId(movie.getId()),
-                        addMovieInformation(movie))));
+        return getPagedMovieResponseDto(movies);
+    }
+
+    public PagedResponseDto<MovieResponseDto> getPagedMovieResponseDto(Page<Movie> movies) {
+        List<CompletableFuture<MovieResponseDto>> futures = movies
+                .map(movie -> CompletableFuture.supplyAsync(() ->
+                        MovieResponseDto.toMovieResponseDto(
+                                movie,
+                                addMovieInformation(movie)
+                        )
+                )).toList();
+
+        List<MovieResponseDto> movieResponseDtos = futures
+                .parallelStream()
+                .map(CompletableFuture::join)
+                .toList();
+
+        return new PagedResponseDto<>(movieResponseDtos, movies.getNumber(), movies.getSize(), movies.getTotalElements(), movies.getTotalPages(), movies.isLast());
     }
 
     public Movie findMovieById(Long id) {
@@ -103,17 +127,18 @@ public class MovieService {
         return movieRepository.findAll();
     }
 
-    public MovieExtraInformationResponseDto addMovieInformation(Movie movie) {
+    @Async
+    public CompletableFuture<MovieExtraInformationResponseDto> addMovieInformation(Movie movie) {
         Long tid = movie.getTId();
         if (tid == null)
             return null;
         RestTemplate restTemplate = new RestTemplate();
-        try{
+        try {
             MovieExtraInformationResponseDto movieExtraInformationResponseDto = restTemplate.getForObject(BASE_URL + tid +
                     "?api_key=" + apiKey + LANGUAGE_FORMAT, MovieExtraInformationResponseDto.class);
             movieExtraInformationResponseDto.setPoster_path(IMAGE_BASE_URL + movieExtraInformationResponseDto.getPoster_path());
-            return movieExtraInformationResponseDto;
-        }catch (HttpClientErrorException ex) {
+            return CompletableFuture.completedFuture(movieExtraInformationResponseDto);
+        } catch (HttpClientErrorException ex) {
             return null;
         }
     }
